@@ -18,7 +18,6 @@ public static class DependencyInjection
         var useInMemory = configuration.GetValue("UseInMemoryDatabase", false);
 
         var shouldUseInMemory = useInMemory ||
-                                string.IsNullOrWhiteSpace(connectionString) ||
                                 (connectionString?.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ?? false);
 
         if (shouldUseInMemory)
@@ -28,8 +27,16 @@ public static class DependencyInjection
         }
         else
         {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' was not found. " +
+                    "For local development, verify that 'appsettings.Development.json' is present and ASPNETCORE_ENVIRONMENT is set to 'Development'. " +
+                    "In production, provide the connection string via the 'ConnectionStrings__DefaultConnection' environment variable or secret store.");
+            }
+
             services.AddDbContext<VideoGameCatalogueDbContext>(options =>
-                options.UseSqlServer(connectionString!, sqlOptions =>
+                options.UseSqlServer(connectionString, sqlOptions =>
                 {
                     sqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 3,

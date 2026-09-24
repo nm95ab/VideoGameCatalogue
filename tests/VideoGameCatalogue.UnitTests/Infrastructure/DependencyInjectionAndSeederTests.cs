@@ -76,6 +76,24 @@ public sealed class DependencyInjectionAndSeederTests
     }
 
     [Fact]
+    public void AddInfrastructure_WhenConnectionStringMissingAndNotInMemory_ShouldThrowInvalidOperationException()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "UseInMemoryDatabase", "false" },
+                { "ConnectionStrings:DefaultConnection", "" }
+            })
+            .Build();
+
+        var act = () => services.AddInfrastructure(configuration);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Connection string 'DefaultConnection' was not found*");
+    }
+
+    [Fact]
     public async Task DatabaseSeeder_SeedsGamesAndLookups_WhenEmpty_AndSkips_WhenAlreadySeeded()
     {
         var connectionString = "Server=127.0.0.1,1433;Database=VideoGameCatalogueSeederTestsDb;User Id=sa;Password=YourStrong@Password123!;TrustServerCertificate=True;MultipleActiveResultSets=true;Connect Timeout=15";
