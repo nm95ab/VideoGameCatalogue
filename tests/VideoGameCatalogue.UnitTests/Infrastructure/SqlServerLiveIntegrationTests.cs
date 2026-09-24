@@ -46,6 +46,35 @@ public sealed class SqlServerLiveIntegrationTests : IDisposable
         results[0].Platform.Value.Should().Be("Nintendo 64");
     }
 
+    [Fact]
+    public async Task LiveSqlServer_MigrateSchema_CreatesExpectedIndexesOnVideoGamesTable()
+    {
+        await DatabaseSeeder.MigrateSchemaAsync(_context);
+
+        var connection = _context.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await connection.OpenAsync();
+        }
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT name FROM sys.indexes WHERE object_id = OBJECT_ID('VideoGames') AND is_primary_key = 0";
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        var indexNames = new List<string>();
+        while (await reader.ReadAsync())
+        {
+            indexNames.Add(reader.GetString(0));
+        }
+
+        indexNames.Should().Contain([
+            "IX_VideoGames_Platform",
+            "IX_VideoGames_Genre",
+            "IX_VideoGames_Title",
+            "IX_VideoGames_Platform_Genre_Title"
+        ]);
+    }
+
     public void Dispose()
     {
         _context.Database.EnsureDeleted();

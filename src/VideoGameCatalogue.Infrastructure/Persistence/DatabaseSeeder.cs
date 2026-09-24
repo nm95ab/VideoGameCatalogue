@@ -54,16 +54,40 @@ public static class DatabaseSeeder
         await SeedGamesAsync(context, cancellationToken);
     }
 
+    private const string SchemaMigrationSql = @"
+        IF EXISTS (SELECT * FROM sys.tables WHERE name = 'VideoGames')
+        BEGIN
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('VideoGames') AND name = 'ImageId')
+            BEGIN
+                ALTER TABLE [VideoGames] ADD [ImageId] NVARCHAR(100) NULL;
+            END
+
+            IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_VideoGames_Platform' AND object_id = OBJECT_ID('VideoGames'))
+            BEGIN
+                CREATE NONCLUSTERED INDEX [IX_VideoGames_Platform] ON [VideoGames] ([Platform]);
+            END
+
+            IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_VideoGames_Genre' AND object_id = OBJECT_ID('VideoGames'))
+            BEGIN
+                CREATE NONCLUSTERED INDEX [IX_VideoGames_Genre] ON [VideoGames] ([Genre]);
+            END
+
+            IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_VideoGames_Title' AND object_id = OBJECT_ID('VideoGames'))
+            BEGIN
+                CREATE NONCLUSTERED INDEX [IX_VideoGames_Title] ON [VideoGames] ([Title]);
+            END
+
+            IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_VideoGames_Platform_Genre_Title' AND object_id = OBJECT_ID('VideoGames'))
+            BEGIN
+                CREATE NONCLUSTERED INDEX [IX_VideoGames_Platform_Genre_Title] ON [VideoGames] ([Platform], [Genre], [Title]);
+            END
+        END";
+
     public static async Task MigrateSchemaAsync(VideoGameCatalogueDbContext context, CancellationToken cancellationToken = default)
     {
         if (context.Database.IsRelational())
         {
-            await context.Database.ExecuteSqlRawAsync(@"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'VideoGames')
-                AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('VideoGames') AND name = 'ImageId')
-                BEGIN
-                    ALTER TABLE [VideoGames] ADD [ImageId] NVARCHAR(100) NULL;
-                END", cancellationToken);
+            await context.Database.ExecuteSqlRawAsync(SchemaMigrationSql, cancellationToken);
         }
     }
 
@@ -71,12 +95,7 @@ public static class DatabaseSeeder
     {
         if (context.Database.IsRelational())
         {
-            context.Database.ExecuteSqlRaw(@"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'VideoGames')
-                AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('VideoGames') AND name = 'ImageId')
-                BEGIN
-                    ALTER TABLE [VideoGames] ADD [ImageId] NVARCHAR(100) NULL;
-                END");
+            context.Database.ExecuteSqlRaw(SchemaMigrationSql);
         }
     }
 
