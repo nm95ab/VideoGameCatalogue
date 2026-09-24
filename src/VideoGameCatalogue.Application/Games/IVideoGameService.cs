@@ -13,6 +13,14 @@ namespace VideoGameCatalogue.Application.Games;
 /// </summary>
 public interface IVideoGameService
 {
+    Task<PagedResult<GameDto>> GetGamesAsync(
+        string? searchTerm = null,
+        string? platform = null,
+        string? genre = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<GameDto>> GetAllGamesAsync(
         string? searchTerm = null,
         string? platform = null,

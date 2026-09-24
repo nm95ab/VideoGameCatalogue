@@ -4,7 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameListComponent } from './game-list.component';
 import { GameService } from '../../core/services/game.service';
-import { Game } from '../../core/models/game.model';
+import { Game, PagedResult } from '../../core/models/game.model';
 
 describe('GameListComponent', () => {
   let component: GameListComponent;
@@ -26,9 +26,19 @@ describe('GameListComponent', () => {
     }
   ];
 
+  const samplePagedResult: PagedResult<Game> = {
+    items: sampleGames,
+    pageNumber: 1,
+    pageSize: 6,
+    totalCount: 1,
+    totalPages: 1,
+    hasPreviousPage: false,
+    hasNextPage: false
+  };
+
   beforeEach(async () => {
     mockGameService = {
-      getGames: vi.fn().mockReturnValue(of(sampleGames)),
+      getGames: vi.fn().mockReturnValue(of(samplePagedResult)),
       getMetadata: vi.fn().mockReturnValue(of({ platforms: ['SNES'], genres: ['Platformer'], ratings: ['Everyone'] })),
       getImageUrl: vi.fn((id: string, directUrl?: string | null) => directUrl || `http://localhost:5111/api/images/${id}`)
     };
@@ -54,6 +64,8 @@ describe('GameListComponent', () => {
     expect(component).toBeTruthy();
     expect(component.games().length).toBe(1);
     expect(component.games()[0].title).toBe('Super Mario World');
+    expect(component.totalCount()).toBe(1);
+    expect(component.totalPages()).toBe(1);
     expect(component.isLoading()).toBe(false);
   });
 
@@ -61,7 +73,7 @@ describe('GameListComponent', () => {
     fixture.detectChanges();
     component.searchTerm = 'Mario';
     component.onFilterChange();
-    expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '');
+    expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '', 1, 6);
   });
 
   it('should reset filters', () => {
@@ -75,7 +87,7 @@ describe('GameListComponent', () => {
     expect(component.searchTerm).toBe('');
     expect(component.selectedPlatform).toBe('');
     expect(component.selectedGenre).toBe('');
-    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '');
+    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 1, 6);
   });
 
   it('should navigate to add page', () => {
@@ -106,7 +118,7 @@ describe('GameListComponent', () => {
 
       vi.advanceTimersByTime(1);
       expect(mockGameService.getGames).toHaveBeenCalledTimes(1);
-      expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '');
+      expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '', 1, 6);
     } finally {
       vi.useRealTimers();
     }
@@ -134,7 +146,7 @@ describe('GameListComponent', () => {
     fixture.detectChanges();
 
     let subscriber1Cancelled = false;
-    const slowObservable$ = new Observable<Game[]>((subscriber) => {
+    const slowObservable$ = new Observable<PagedResult<Game>>((subscriber) => {
       return () => {
         subscriber1Cancelled = true;
       };
@@ -146,13 +158,12 @@ describe('GameListComponent', () => {
     expect(subscriber1Cancelled).toBe(false);
 
     // Trigger second request immediately
-    vi.mocked(mockGameService.getGames!).mockReturnValueOnce(of(sampleGames));
+    vi.mocked(mockGameService.getGames!).mockReturnValueOnce(of(samplePagedResult));
     component.onFilterChange();
 
     expect(subscriber1Cancelled).toBe(true);
     expect(component.games().length).toBe(1);
   });
-
 
   it('should display error message when getGames fails', () => {
     vi.mocked(mockGameService.getGames!).mockReturnValueOnce(throwError(() => new Error('Network error')));
@@ -170,16 +181,14 @@ describe('GameListComponent', () => {
     expect(component.genres().length).toBe(0);
   });
 
-  it('should slice pagedGames correctly according to page and pageSize', () => {
+  it('should fetch new page when page changes', () => {
     fixture.detectChanges();
-    component.pageSize.set(1);
-    component.page.set(1);
+    vi.mocked(mockGameService.getGames!).mockClear();
 
-    expect(component.pagedGames().length).toBe(1);
-    expect(component.pagedGames()[0].title).toBe('Super Mario World');
+    component.onPageChange(2);
 
-    component.page.set(2);
-    expect(component.pagedGames().length).toBe(0);
+    expect(component.page()).toBe(2);
+    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 2, 6);
   });
 
   it('should reset page to 1 when search or filters change', () => {
@@ -198,12 +207,34 @@ describe('GameListComponent', () => {
     expect(component.page()).toBe(1);
   });
 
-  it('should update pageSize as a number and recalculate pagedGames', () => {
+  it('should update pageSize and reset page to 1 when pageSize changes', () => {
     fixture.detectChanges();
-    component.pageSize.set(12);
-    expect(typeof component.pageSize()).toBe('number');
+    vi.mocked(mockGameService.getGames!).mockClear();
+
+    component.onPageSizeChange(12);
+
     expect(component.pageSize()).toBe(12);
-    expect(component.pagedGames().length).toBe(1);
+    expect(component.page()).toBe(1);
+    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 1, 12);
+  });
+
+  it('should compute startItemIndex and endItemIndex correctly', () => {
+    fixture.detectChanges();
+    expect(component.startItemIndex()).toBe(1);
+    expect(component.endItemIndex()).toBe(1);
+
+    component.totalCount.set(25);
+    component.page.set(2);
+    component.pageSize.set(10);
+    expect(component.startItemIndex()).toBe(11);
+    expect(component.endItemIndex()).toBe(20);
+
+    component.page.set(3);
+    expect(component.startItemIndex()).toBe(21);
+    expect(component.endItemIndex()).toBe(25);
+
+    component.totalCount.set(0);
+    expect(component.startItemIndex()).toBe(0);
   });
 
   describe('Thumbnails and Initials', () => {

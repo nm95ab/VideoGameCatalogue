@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CatalogueMetadata, CreateGameRequest, Game, ImageUploadResponse, UpdateGameRequest } from '../models/game.model';
+import { CatalogueMetadata, CreateGameRequest, Game, ImageUploadResponse, PagedResult, UpdateGameRequest } from '../models/game.model';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +14,10 @@ export class GameService {
   private readonly apiUrl = `${this.baseUrl}/games`;
   private readonly imagesUrl = `${this.baseUrl}/images`;
 
-  getGames(searchTerm?: string, platform?: string, genre?: string): Observable<Game[]> {
-    let params = new HttpParams();
+  getGames(searchTerm?: string, platform?: string, genre?: string, page: number = 1, pageSize: number = 6): Observable<PagedResult<Game>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
 
     if (searchTerm?.trim()) {
       params = params.set('search', searchTerm.trim());
@@ -29,7 +31,7 @@ export class GameService {
       params = params.set('genre', genre.trim());
     }
 
-    return this.http.get<Game[]>(this.apiUrl, { params });
+    return this.http.get<PagedResult<Game>>(this.apiUrl, { params });
   }
 
   getGameById(id: string): Observable<Game> {

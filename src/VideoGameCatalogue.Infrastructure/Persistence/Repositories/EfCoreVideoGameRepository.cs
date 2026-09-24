@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using VideoGameCatalogue.Domain.Common;
 using VideoGameCatalogue.Domain.Games;
 using VideoGameCatalogue.Domain.Ports;
 
@@ -13,6 +14,34 @@ namespace VideoGameCatalogue.Infrastructure.Persistence.Repositories;
 /// </summary>
 public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IVideoGameRepository
 {
+    public async Task<PagedResult<VideoGame>> GetPagedAsync(
+        string? searchTerm = null,
+        string? platform = null,
+        string? genre = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var validPageNumber = pageNumber < 1 ? 1 : pageNumber;
+        var validPageSize = pageSize < 1 ? 10 : (pageSize > 100 ? 100 : pageSize);
+
+        IQueryable<VideoGame> query = context.VideoGames.AsNoTracking();
+
+        query = ApplySearchFilter(query, searchTerm);
+        query = ApplyPlatformFilter(query, platform);
+        query = ApplyGenreFilter(query, genre);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        query = ApplyOrdering(query);
+
+        var items = await query
+            .Skip((validPageNumber - 1) * validPageSize)
+            .Take(validPageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<VideoGame>(items, validPageNumber, validPageSize, totalCount);
+    }
     /// <summary>
     /// Retrieves all matching video games based on optional search term, platform, and genre filters.
     /// <para>

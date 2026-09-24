@@ -44,20 +44,55 @@ describe('GameService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should get games with query params', () => {
-    service.getGames('Chrono', 'SNES', 'RPG').subscribe(games => {
-      expect(games.length).toBe(1);
-      expect(games[0].title).toBe('Chrono Trigger');
+  it('should get games with query params and pagination', () => {
+    service.getGames('Chrono', 'SNES', 'RPG', 2, 10).subscribe(result => {
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].title).toBe('Chrono Trigger');
+      expect(result.totalCount).toBe(1);
+      expect(result.pageNumber).toBe(2);
+      expect(result.pageSize).toBe(10);
     });
 
     const req = httpTesting.expectOne(request =>
       request.url === 'http://localhost:5111/api/games' &&
       request.params.get('search') === 'Chrono' &&
       request.params.get('platform') === 'SNES' &&
-      request.params.get('genre') === 'RPG'
+      request.params.get('genre') === 'RPG' &&
+      request.params.get('page') === '2' &&
+      request.params.get('pageSize') === '10'
     );
     expect(req.request.method).toBe('GET');
-    req.flush(mockGames);
+    req.flush({
+      items: mockGames,
+      pageNumber: 2,
+      pageSize: 10,
+      totalCount: 1,
+      totalPages: 1,
+      hasPreviousPage: true,
+      hasNextPage: false
+    });
+  });
+
+  it('should use default pagination parameters when omitted', () => {
+    service.getGames().subscribe(result => {
+      expect(result.items.length).toBe(1);
+    });
+
+    const req = httpTesting.expectOne(request =>
+      request.url === 'http://localhost:5111/api/games' &&
+      request.params.get('page') === '1' &&
+      request.params.get('pageSize') === '6'
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      items: mockGames,
+      pageNumber: 1,
+      pageSize: 6,
+      totalCount: 1,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false
+    });
   });
 
   it('should get game by ID', () => {

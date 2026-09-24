@@ -92,7 +92,7 @@
     <p class="text-muted mt-2">Loading catalogue entries...</p>
   </div>
 } @else if (games().length === 0) {
-  <div class="card text-center py-5 shadow-sm border-0">
+  <div class="card text-center py-5 shadow-min border-0">
     <div class="card-body">
       <h4 class="card-title text-muted">No Video Games Found</h4>
       <p class="card-text text-muted mb-0">Try adjusting your search criteria or filter options.</p>
@@ -114,7 +114,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (game of pagedGames(); track game.id) {
+          @for (game of games(); track game.id) {
             <tr>
               <td>
                 <div class="d-flex align-items-center gap-3">
@@ -179,15 +179,19 @@
     </div>
     <div class="card-footer bg-white text-muted small d-flex flex-column flex-md-row justify-content-between align-items-center py-3 gap-2">
       <div class="d-flex align-items-center gap-2">
-        <span>Showing {{ pagedGames().length }} of {{ games().length }} game{{ games().length === 1 ? '' : 's' }}</span>
-        @if (games().length > pageSizeOptions[0]) {
+        @if (startItemIndex() === endItemIndex()) {
+          <span>Showing {{ startItemIndex() }} of {{ totalCount() }} game{{ totalCount() === 1 ? '' : 's' }}</span>
+        } @else {
+          <span>Showing {{ startItemIndex() }}–{{ endItemIndex() }} of {{ totalCount() }} games</span>
+        }
+        @if (totalCount() > pageSizeOptions[0]) {
           <span class="text-muted">&bull;</span>
           <label for="pageSizeSelect" class="small">Per page:</label>
           <select
             id="pageSizeSelect"
             class="form-select form-select-sm w-auto d-inline-block"
             [ngModel]="pageSize()"
-            (ngModelChange)="pageSize.set(+$event); page.set(1)"
+            (ngModelChange)="onPageSizeChange(+$event)"
           >
             @for (opt of pageSizeOptions; track opt) {
               <option [ngValue]="opt">{{ opt }}</option>
@@ -195,12 +199,12 @@
           </select>
         }
       </div>
-      @if (games().length > pageSize()) {
+      @if (totalCount() > pageSize()) {
         <ngb-pagination
           [page]="page()"
-          (pageChange)="page.set($event)"
+          (pageChange)="onPageChange($event)"
           [pageSize]="pageSize()"
-          [collectionSize]="games().length"
+          [collectionSize]="totalCount()"
           [maxSize]="5"
           [rotate]="true"
           [boundaryLinks]="true"

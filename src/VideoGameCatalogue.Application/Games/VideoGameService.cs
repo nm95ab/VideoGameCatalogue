@@ -24,6 +24,19 @@ public class VideoGameService(
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
+    public async Task<PagedResult<GameDto>> GetGamesAsync(
+        string? searchTerm = null,
+        string? platform = null,
+        string? genre = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var pagedGames = await repository.GetPagedAsync(searchTerm, platform, genre, pageNumber, pageSize, cancellationToken);
+        var dtos = pagedGames.Items.Select(g => GameDto.FromDomain(g, imageStorage)).ToList();
+        return new PagedResult<GameDto>(dtos, pagedGames.PageNumber, pagedGames.PageSize, pagedGames.TotalCount);
+    }
+
     public async Task<IReadOnlyList<GameDto>> GetAllGamesAsync(
         string? searchTerm = null,
         string? platform = null,

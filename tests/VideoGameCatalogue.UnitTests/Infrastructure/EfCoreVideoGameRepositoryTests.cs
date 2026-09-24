@@ -208,6 +208,86 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
         updated.Description.Should().Be("Remastered version for Switch");
     }
 
+    [Fact]
+    public async Task GetPagedAsync_WithPageAndPageSize_ReturnsPagedSliceAndTotalCount()
+    {
+        // Arrange
+        for (var i = 1; i <= 5; i++)
+        {
+            var game = VideoGame.Create(
+                GameTitle.Create($"Game {i:D2}").Value,
+                Platform.Create("PC").Value,
+                Genre.Create("Action").Value,
+                ReleaseYear.Create(2000 + i).Value,
+                Rating.Create("Everyone").Value).Value;
+            await _repository.AddAsync(game);
+        }
+
+        // Act - Page 2 with PageSize 2
+        var pagedResult = await _repository.GetPagedAsync(pageNumber: 2, pageSize: 2);
+
+        // Assert
+        pagedResult.TotalCount.Should().Be(5);
+        pagedResult.PageNumber.Should().Be(2);
+        pagedResult.PageSize.Should().Be(2);
+        pagedResult.TotalPages.Should().Be(3);
+        pagedResult.Items.Should().HaveCount(2);
+        pagedResult.Items[0].Title.Value.Should().Be("Game 03");
+        pagedResult.Items[1].Title.Value.Should().Be("Game 04");
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_WithFilters_AppliesFiltersBeforePaging()
+    {
+        // Arrange
+        var g1 = VideoGame.Create(GameTitle.Create("Halo 1").Value, Platform.Create("Xbox").Value, Genre.Create("Shooter").Value, ReleaseYear.Create(2001).Value, Rating.Create("Mature 17+").Value).Value;
+        var g2 = VideoGame.Create(GameTitle.Create("Halo 2").Value, Platform.Create("Xbox").Value, Genre.Create("Shooter").Value, ReleaseYear.Create(2004).Value, Rating.Create("Mature 17+").Value).Value;
+        var g3 = VideoGame.Create(GameTitle.Create("Mario").Value, Platform.Create("Nintendo 64").Value, Genre.Create("Platformer").Value, ReleaseYear.Create(1996).Value, Rating.Create("Everyone").Value).Value;
+
+        await _repository.AddAsync(g1);
+        await _repository.AddAsync(g2);
+        await _repository.AddAsync(g3);
+
+        // Act
+        var result = await _repository.GetPagedAsync(searchTerm: "Halo", platform: "Xbox", genre: "Shooter", pageNumber: 1, pageSize: 10);
+
+        // Assert
+        result.TotalCount.Should().Be(2);
+        result.Items.Should().HaveCount(2);
+        result.Items.Select(x => x.Title.Value).Should().Contain(["Halo 1", "Halo 2"]);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_WhenPageOutOfRange_ReturnsEmptyItemsWithCorrectTotalCount()
+    {
+        // Arrange
+        var g = VideoGame.Create(GameTitle.Create("Zelda").Value, Platform.Create("NES").Value, Genre.Create("Action-Adventure").Value, ReleaseYear.Create(1986).Value, Rating.Create("Everyone").Value).Value;
+        await _repository.AddAsync(g);
+
+        // Act
+        var result = await _repository.GetPagedAsync(pageNumber: 5, pageSize: 10);
+
+        // Assert
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_WhenPageNumberOrPageSizeInvalid_ClampsToValidRanges()
+    {
+        // Arrange
+        var g = VideoGame.Create(GameTitle.Create("Doom").Value, Platform.Create("PC").Value, Genre.Create("Shooter").Value, ReleaseYear.Create(1993).Value, Rating.Create("Mature 17+").Value).Value;
+        await _repository.AddAsync(g);
+
+        // Act - negative page number and excessive page size
+        var result = await _repository.GetPagedAsync(pageNumber: -1, pageSize: 500);
+
+        // Assert
+        result.PageNumber.Should().Be(1);
+        result.PageSize.Should().Be(100);
+        result.Items.Should().HaveCount(1);
+    }
+
     public void Dispose()
     {
         _context.Dispose();

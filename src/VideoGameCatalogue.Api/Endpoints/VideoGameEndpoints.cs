@@ -30,15 +30,23 @@ public static class VideoGameEndpoints
         return app;
     }
 
-    private static async Task<Ok<IReadOnlyList<GameDto>>> GetGames(
+    private static async Task<Ok<PagedResult<GameDto>>> GetGames(
         [FromServices] IVideoGameService service,
         [FromQuery] string? search,
         [FromQuery] string? platform,
         [FromQuery] string? genre,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize,
         CancellationToken ct)
     {
-        var games = await service.GetAllGamesAsync(search, platform, genre, ct);
-        return TypedResults.Ok(games);
+        var result = await service.GetGamesAsync(
+            search,
+            platform,
+            genre,
+            page ?? 1,
+            pageSize ?? 10,
+            ct);
+        return TypedResults.Ok(result);
     }
 
     private static async Task<Ok<CatalogueMetadataDto>> GetMetadata(

@@ -53,6 +53,35 @@ public class VideoGameServiceTests
     }
 
     [Fact]
+    public async Task GetGamesAsync_WithPagination_ShouldReturnMappedPagedResult()
+    {
+        // Arrange
+        var games = new List<VideoGame>
+        {
+            CreateSampleGame("Super Mario World", 1990),
+            CreateSampleGame("Chrono Trigger", 1995)
+        };
+        var pagedResult = new PagedResult<VideoGame>(games, 1, 10, 2);
+        _repository.GetPagedAsync(
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>()).Returns(pagedResult);
+
+        // Act
+        var result = await _service.GetGamesAsync(null, null, null, 1, 10, CancellationToken.None);
+
+        // Assert
+        result.TotalCount.Should().Be(2);
+        result.PageNumber.Should().Be(1);
+        result.PageSize.Should().Be(10);
+        result.Items.Should().HaveCount(2);
+        result.Items.Select(x => x.Title).Should().Contain(["Super Mario World", "Chrono Trigger"]);
+    }
+
+    [Fact]
     public async Task GetGameByIdAsync_WhenGameExists_ShouldReturnSuccessWithDto()
     {
         // Arrange

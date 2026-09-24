@@ -1,3 +1,4 @@
+using VideoGameCatalogue.Domain.Common;
 using VideoGameCatalogue.Domain.Games;
 
 namespace VideoGameCatalogue.Domain.Ports;
@@ -12,6 +13,14 @@ namespace VideoGameCatalogue.Domain.Ports;
 /// </summary>
 public interface IVideoGameRepository
 {
+    Task<PagedResult<VideoGame>> GetPagedAsync(
+        string? searchTerm = null,
+        string? platform = null,
+        string? genre = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<VideoGame>> GetAllAsync(
         string? searchTerm = null,
         string? platform = null,

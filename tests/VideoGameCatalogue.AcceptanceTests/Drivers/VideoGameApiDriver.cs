@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using VideoGameCatalogue.Application.Games.DTOs;
+using VideoGameCatalogue.Domain.Common;
 
 namespace VideoGameCatalogue.AcceptanceTests.Drivers;
 
@@ -24,7 +25,12 @@ public class VideoGameApiDriver(HttpClient httpClient)
     public HttpStatusCode LastStatusCode => LastResponse?.StatusCode ?? HttpStatusCode.InternalServerError;
     public string? LastResponseBody { get; private set; }
 
-    public async Task GetAllGamesAsync(string? search = null, string? platform = null, string? genre = null)
+    public async Task GetAllGamesAsync(
+        string? search = null,
+        string? platform = null,
+        string? genre = null,
+        int? page = null,
+        int? pageSize = null)
     {
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(search))
@@ -33,6 +39,10 @@ public class VideoGameApiDriver(HttpClient httpClient)
             queryParams.Add($"platform={Uri.EscapeDataString(platform)}");
         if (!string.IsNullOrWhiteSpace(genre))
             queryParams.Add($"genre={Uri.EscapeDataString(genre)}");
+        if (page.HasValue)
+            queryParams.Add($"page={page.Value}");
+        if (pageSize.HasValue)
+            queryParams.Add($"pageSize={pageSize.Value}");
 
         var uri = "/api/games";
         if (queryParams.Count > 0)
@@ -75,7 +85,21 @@ public class VideoGameApiDriver(HttpClient httpClient)
     public async Task<List<GameDto>> ReadGamesListAsync()
     {
         if (string.IsNullOrWhiteSpace(LastResponseBody)) return [];
+        try
+        {
+            var paged = JsonSerializer.Deserialize<PagedResult<GameDto>>(LastResponseBody, JsonOptions);
+            if (paged?.Items is not null)
+                return paged.Items.ToList();
+        }
+        catch { }
+
         return JsonSerializer.Deserialize<List<GameDto>>(LastResponseBody, JsonOptions) ?? [];
+    }
+
+    public async Task<PagedResult<GameDto>?> ReadPagedGamesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(LastResponseBody)) return null;
+        return JsonSerializer.Deserialize<PagedResult<GameDto>>(LastResponseBody, JsonOptions);
     }
 
     public async Task<GameDto?> ReadSingleGameAsync()
