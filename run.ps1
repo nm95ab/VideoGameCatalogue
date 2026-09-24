@@ -1,4 +1,8 @@
 # Video Game Catalogue - Developer Quickstart (Windows PowerShell)
+param(
+    [switch]$InMemory = $false
+)
+
 $ErrorActionPreference = "Continue"
 
 function Update-EnvironmentPath {
@@ -79,7 +83,8 @@ function Install-NodeJs {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             Invoke-WebRequest -Uri $msiUrl -OutFile $msiPath -UseBasicParsing
             Write-Host "  [*] Launching MSI installer (silent)..."
-            $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$msiPath`" /qn /norestart" -PassThru -Wait
+            $msiArgs = '/i "' + $msiPath + '" /qn /norestart'
+            $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -PassThru -Wait
             if ($proc.ExitCode -eq 0) {
                 $success = $true
             }
@@ -127,6 +132,30 @@ function Install-Docker {
     }
 
     Update-EnvironmentPath
+}
+
+function Test-WslInstalled {
+    try {
+        if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue)) {
+            return $false
+        }
+        $null = & cmd.exe /c "wsl --status >nul 2>&1"
+        return ($LASTEXITCODE -eq 0)
+    } catch {
+        return $false
+    }
+}
+
+function Install-Wsl {
+    Write-Host "  [*] WSL is required by Docker Desktop on Windows." -ForegroundColor Yellow
+    Write-Host "  [*] Launching elevated prompt to install WSL..." -ForegroundColor Cyan
+    try {
+        $proc = Start-Process powershell -Verb RunAs -ArgumentList "-Command wsl --install --no-distribution" -PassThru -Wait
+        return ($proc.ExitCode -eq 0)
+    } catch {
+        Write-Host "  [WARN] Could not elevate to install WSL automatically: $_" -ForegroundColor Yellow
+        return $false
+    }
 }
 
 function Test-DockerDaemon {
@@ -209,101 +238,138 @@ Write-Host "  [OK] npm found: $npmVer" -ForegroundColor Green
 Write-Host ""
 Write-Host "[2/5] Checking Database Environment..." -ForegroundColor White
 
-$alreadyListening = $false
-try {
-    $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
-    if ($tcp.TcpTestSucceeded) {
-        $alreadyListening = $true
-    }
-} catch { }
+$useInMemory = $InMemory.IsPresent
 
-if ($alreadyListening) {
-    Write-Host "  [OK] SQL Server is already listening on port 1433." -ForegroundColor Green
-} else {
-    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-        Write-Host "  [WARN] Docker CLI not found." -ForegroundColor Yellow
-        Install-Docker
-    }
-
-    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-        Write-Host "[ERROR] Docker not found and could not be installed automatically." -ForegroundColor Red
-        Write-Host "   Please install Docker Desktop: https://www.docker.com/products/docker-desktop/"
-        exit 1
-    }
-
-    if (-not (Test-DockerDaemon)) {
-        Write-Host "  [*] Docker daemon is not running. Starting Docker Desktop..." -ForegroundColor Cyan
-        $dockerPaths = @(
-            "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe",
-            "$env:LOCALAPPDATA\Programs\Docker\Docker\Docker Desktop.exe"
-        )
-        $started = $false
-        foreach ($app in $dockerPaths) {
-            if (Test-Path $app) {
-                Start-Process -FilePath $app
-                $started = $true
-                break
-            }
-        }
-        if (-not $started) {
-            try {
-                Start-Process "Docker Desktop" -ErrorAction SilentlyContinue
-            } catch { }
-        }
-
-        Write-Host -NoNewline "  [*] Waiting for Docker engine to start..."
-        $dockerReady = $false
-        for ($d = 1; $d -le 60; $d++) {
-            if (Test-DockerDaemon) {
-                $dockerReady = $true
-                Write-Host " Ready!" -ForegroundColor Green
-                break
-            }
-            Start-Sleep -Seconds 2
-            Write-Host -NoNewline "."
-        }
-
-        if (-not $dockerReady) {
-            Write-Host ""
-            Write-Host "[ERROR] Docker engine did not respond in time." -ForegroundColor Red
-            Write-Host "   Please open Docker Desktop from the Start Menu, complete any initial setup, and re-run .\run.ps1"
-            exit 1
-        }
-    } else {
-        Write-Host "  [OK] Docker daemon is running." -ForegroundColor Green
-    }
-
-    Write-Host "  [*] Ensuring SQL Server container is up..."
+if (-not $useInMemory) {
+    $alreadyListening = $false
     try {
-        $containers = & docker ps -a --format "{{.Names}}" 2>$null
-        if ($containers -match "videogamecatalogue-sqlserver") {
-            & docker start videogamecatalogue-sqlserver 2>$null | Out-Null
-        } else {
-            & docker compose up -d sqlserver 2>$null | Out-Null
-        }
-    } catch {
-        Write-Host "  [WARN] Issue starting container via docker CLI: $_" -ForegroundColor Yellow
-        & docker compose up -d sqlserver
-    }
-
-    Write-Host -NoNewline "  [*] Waiting for SQL Server on port 1433..."
-    $sqlReady = $false
-    for ($i = 1; $i -le 30; $i++) {
         $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
         if ($tcp.TcpTestSucceeded) {
-            $sqlReady = $true
-            Write-Host " Ready!" -ForegroundColor Green
-            break
+            $alreadyListening = $true
         }
-        Start-Sleep -Seconds 1
-        Write-Host -NoNewline "."
-    }
+    } catch { }
 
-    if (-not $sqlReady) {
-        Write-Host ""
-        Write-Host "[ERROR] SQL Server timed out waiting on port 1433." -ForegroundColor Red
-        exit 1
+    if ($alreadyListening) {
+        Write-Host "  [OK] SQL Server is already listening on port 1433." -ForegroundColor Green
+    } else {
+        # Check WSL requirement for Docker on Windows
+        if (-not (Test-WslInstalled)) {
+            Write-Host "  [WARN] Windows Subsystem for Linux (WSL) is not enabled." -ForegroundColor Yellow
+            Install-Wsl
+            Write-Host ""
+            Write-Host "====================================================" -ForegroundColor Yellow
+            Write-Host "   SYSTEM REBOOT REQUIRED FOR WSL & DOCKER          " -ForegroundColor Yellow
+            Write-Host "====================================================" -ForegroundColor Yellow
+            Write-Host "Windows requires a system restart before Docker can start."
+            Write-Host "After restarting your computer, run: .\run.ps1"
+            Write-Host ""
+            $choice = Read-Host "Would you like to run with In-Memory database for now? (y/N)"
+            if ($choice -match "^[yY]") {
+                $useInMemory = $true
+            } else {
+                exit 0
+            }
+        }
+
+        if (-not $useInMemory) {
+            if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+                Write-Host "  [WARN] Docker CLI not found." -ForegroundColor Yellow
+                Install-Docker
+            }
+
+            if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+                Write-Host "[ERROR] Docker not found and could not be installed automatically." -ForegroundColor Red
+                Write-Host "   Please install Docker Desktop: https://www.docker.com/products/docker-desktop/"
+                exit 1
+            }
+
+            if (-not (Test-DockerDaemon)) {
+                Write-Host "  [*] Docker daemon is not running. Starting Docker Desktop..." -ForegroundColor Cyan
+                $dockerPaths = @(
+                    "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe",
+                    "$env:LOCALAPPDATA\Programs\Docker\Docker\Docker Desktop.exe"
+                )
+                $started = $false
+                foreach ($app in $dockerPaths) {
+                    if (Test-Path $app) {
+                        Start-Process -FilePath $app
+                        $started = $true
+                        break
+                    }
+                }
+                if (-not $started) {
+                    try {
+                        Start-Process "Docker Desktop" -ErrorAction SilentlyContinue
+                    } catch { }
+                }
+
+                Write-Host -NoNewline "  [*] Waiting for Docker engine to start..."
+                $dockerReady = $false
+                for ($d = 1; $d -le 45; $d++) {
+                    if (Test-DockerDaemon) {
+                        $dockerReady = $true
+                        Write-Host " Ready!" -ForegroundColor Green
+                        break
+                    }
+                    Start-Sleep -Seconds 2
+                    Write-Host -NoNewline "."
+                }
+
+                if (-not $dockerReady) {
+                    Write-Host ""
+                    Write-Host "[WARN] Docker engine did not respond in time." -ForegroundColor Yellow
+                    Write-Host "       (This usually happens when Windows requires a restart to finish WSL setup)."
+                    $choice = Read-Host "Would you like to run with In-Memory database for now? (y/N)"
+                    if ($choice -match "^[yY]") {
+                        $useInMemory = $true
+                    } else {
+                        Write-Host "Please restart your computer to activate WSL, then re-run .\run.ps1"
+                        exit 0
+                    }
+                }
+            } else {
+                Write-Host "  [OK] Docker daemon is running." -ForegroundColor Green
+            }
+        }
+
+        if (-not $useInMemory) {
+            Write-Host "  [*] Ensuring SQL Server container is up..."
+            try {
+                $containers = & docker ps -a --format "{{.Names}}" 2>$null
+                if ($containers -match "videogamecatalogue-sqlserver") {
+                    & docker start videogamecatalogue-sqlserver 2>$null | Out-Null
+                } else {
+                    & docker compose up -d sqlserver 2>$null | Out-Null
+                }
+            } catch {
+                Write-Host "  [WARN] Issue starting container via docker CLI: $_" -ForegroundColor Yellow
+                & docker compose up -d sqlserver
+            }
+
+            Write-Host -NoNewline "  [*] Waiting for SQL Server on port 1433..."
+            $sqlReady = $false
+            for ($i = 1; $i -le 30; $i++) {
+                $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
+                if ($tcp.TcpTestSucceeded) {
+                    $sqlReady = $true
+                    Write-Host " Ready!" -ForegroundColor Green
+                    break
+                }
+                Start-Sleep -Seconds 1
+                Write-Host -NoNewline "."
+            }
+
+            if (-not $sqlReady) {
+                Write-Host ""
+                Write-Host "[ERROR] SQL Server timed out waiting on port 1433." -ForegroundColor Red
+                exit 1
+            }
+        }
     }
+}
+
+if ($useInMemory) {
+    Write-Host "  [*] Using EF Core In-Memory database mode." -ForegroundColor Yellow
 }
 
 # 3. Dependency Verification & Installation
@@ -331,6 +397,10 @@ Write-Host "  [OK] Build succeeded with zero warnings." -ForegroundColor Green
 # 5. Launch Backend & Frontend
 Write-Host ""
 Write-Host "[5/5] Launching Services..." -ForegroundColor White
+
+if ($useInMemory) {
+    $env:UseInMemoryDatabase = "true"
+}
 
 $apiProcess = Start-Process dotnet -ArgumentList "run --project src/VideoGameCatalogue.Api --urls http://127.0.0.1:5111" -PassThru
 Push-Location "src/VideoGameCatalogue.Client"
