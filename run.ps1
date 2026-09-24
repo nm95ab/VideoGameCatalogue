@@ -1,6 +1,95 @@
 # Video Game Catalogue - Developer Quickstart (Windows PowerShell)
 $ErrorActionPreference = "Stop"
 
+function Update-EnvironmentPath {
+    $machinePath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+    $userPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+    $env:Path = "$machinePath;$userPath"
+
+    $standardLocations = @(
+        "$env:ProgramFiles\dotnet",
+        "$env:ProgramFiles\nodejs",
+        "$env:LOCALAPPDATA\Microsoft\dotnet"
+    )
+    foreach ($loc in $standardLocations) {
+        if ((Test-Path $loc) -and ($env:Path -notlike "*$loc*")) {
+            $env:Path = "$loc;$env:Path"
+        }
+    }
+}
+
+function Install-DotNetSdk {
+    Write-Host "  [*] Attempting automatic installation of .NET 10 SDK..." -ForegroundColor Yellow
+    $success = $false
+
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        Write-Host "  [*] Running Windows Package Manager (winget)..."
+        try {
+            & winget install --id Microsoft.DotNet.SDK.10 -e --silent --accept-package-agreements --accept-source-agreements
+            if ($LASTEXITCODE -eq 0) {
+                $success = $true
+            }
+        } catch { }
+    }
+
+    if (-not $success) {
+        Write-Host "  [*] Downloading official Microsoft .NET 10 SDK installer..."
+        $installerUrl = "https://aka.ms/dotnet/10.0/dotnet-sdk-win-x64.exe"
+        $installerPath = Join-Path $env:TEMP "dotnet-sdk-10-installer.exe"
+        try {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
+            Write-Host "  [*] Launching installer (silent)..."
+            $proc = Start-Process -FilePath $installerPath -ArgumentList "/install /quiet /norestart" -PassThru -Wait
+            if ($proc.ExitCode -eq 0) {
+                $success = $true
+            }
+        } catch {
+            Write-Host "  [WARN] Download or execution failed: $_" -ForegroundColor Yellow
+        } finally {
+            if (Test-Path $installerPath) { Remove-Item $installerPath -Force -ErrorAction SilentlyContinue }
+        }
+    }
+
+    Update-EnvironmentPath
+}
+
+function Install-NodeJs {
+    Write-Host "  [*] Attempting automatic installation of Node.js (LTS)..." -ForegroundColor Yellow
+    $success = $false
+
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        Write-Host "  [*] Running Windows Package Manager (winget)..."
+        try {
+            & winget install --id OpenJS.NodeJS.LTS -e --silent --accept-package-agreements --accept-source-agreements
+            if ($LASTEXITCODE -eq 0) {
+                $success = $true
+            }
+        } catch { }
+    }
+
+    if (-not $success) {
+        Write-Host "  [*] Downloading Node.js LTS installer..."
+        $msiUrl = "https://nodejs.org/dist/v24.21.0/node-v24.21.0-x64.msi"
+        $msiPath = Join-Path $env:TEMP "nodejs-lts-installer.msi"
+        try {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $msiUrl -OutFile $msiPath -UseBasicParsing
+            Write-Host "  [*] Launching MSI installer (silent)..."
+            $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$msiPath`" /qn /norestart" -PassThru -Wait
+            if ($proc.ExitCode -eq 0) {
+                $success = $true
+            }
+        } catch {
+            Write-Host "  [WARN] Download or execution failed: $_" -ForegroundColor Yellow
+        } finally {
+            if (Test-Path $msiPath) { Remove-Item $msiPath -Force -ErrorAction SilentlyContinue }
+        }
+    }
+
+    Update-EnvironmentPath
+}
+
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host "   Video Game Catalogue - Developer Quickstart      " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
@@ -8,6 +97,26 @@ Write-Host ""
 
 # 1. Preflight Toolchain Checks
 Write-Host "[1/5] Checking Toolchain Prerequisites..." -ForegroundColor White
+
+# Ensure current session sees system path additions
+Update-EnvironmentPath
+
+$hasDotNet10 = $false
+if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+    $sdks = & dotnet --list-sdks 2>&1
+    if ($sdks -match "10\.") {
+        $hasDotNet10 = $true
+    }
+}
+
+if (-not $hasDotNet10) {
+    if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+        Write-Host "  [WARN] .NET SDK found, but .NET 10 SDK is missing." -ForegroundColor Yellow
+    } else {
+        Write-Host "  [WARN] .NET SDK not found." -ForegroundColor Yellow
+    }
+    Install-DotNetSdk
+}
 
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     Write-Host "[ERROR] .NET SDK not found." -ForegroundColor Red
@@ -18,6 +127,11 @@ $dotnetVer = & dotnet --version
 Write-Host "  [OK] .NET SDK found: $dotnetVer" -ForegroundColor Green
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Host "  [WARN] Node.js not found." -ForegroundColor Yellow
+    Install-NodeJs
+}
+
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Write-Host "[ERROR] Node.js not found." -ForegroundColor Red
     Write-Host "   Please install Node.js (v20+): https://nodejs.org/"
     exit 1
@@ -25,6 +139,9 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
 $nodeVer = & node --version
 Write-Host "  [OK] Node.js found: $nodeVer" -ForegroundColor Green
 
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Update-EnvironmentPath
+}
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     Write-Host "[ERROR] npm not found." -ForegroundColor Red
     exit 1
