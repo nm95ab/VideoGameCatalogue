@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { GameListComponent } from './game-list.component';
 import { GameService } from '../../core/services/game.service';
 import { Game } from '../../core/models/game.model';
@@ -11,6 +12,7 @@ describe('GameListComponent', () => {
   let fixture: ComponentFixture<GameListComponent>;
   let mockGameService: Partial<GameService>;
   let mockRouter: Partial<Router>;
+  let mockModalService: { open: ReturnType<typeof vi.fn> };
 
   const sampleGames: Game[] = [
     {
@@ -37,11 +39,16 @@ describe('GameListComponent', () => {
       navigate: vi.fn()
     };
 
+    mockModalService = {
+      open: vi.fn()
+    };
+
     await TestBed.configureTestingModule({
       imports: [GameListComponent],
       providers: [
         { provide: GameService, useValue: mockGameService },
-        { provide: Router, useValue: mockRouter }
+        { provide: Router, useValue: mockRouter },
+        { provide: NgbModal, useValue: mockModalService }
       ]
     }).compileComponents();
 
@@ -151,5 +158,59 @@ describe('GameListComponent', () => {
 
     expect(subscriber1Cancelled).toBe(true);
     expect(component.games().length).toBe(1);
+  });
+
+  it('should delete game when modal confirms', async () => {
+    fixture.detectChanges();
+    mockModalService.open.mockReturnValue({
+      result: Promise.resolve('confirm')
+    });
+
+    component.openDeleteModal({}, sampleGames[0]);
+    await fixture.whenStable();
+
+    expect(mockGameService.deleteGame).toHaveBeenCalledWith(sampleGames[0].id);
+    expect(component.successMessage()).toContain('was successfully deleted');
+  });
+
+  it('should handle delete error when service fails', async () => {
+    fixture.detectChanges();
+    mockModalService.open.mockReturnValue({
+      result: Promise.resolve('confirm')
+    });
+    vi.mocked(mockGameService.deleteGame!).mockReturnValueOnce(throwError(() => new Error('Delete failed')));
+
+    component.openDeleteModal({}, sampleGames[0]);
+    await fixture.whenStable();
+
+    expect(component.errorMessage()).toContain('Failed to delete');
+  });
+
+  it('should not delete game when modal is dismissed', async () => {
+    fixture.detectChanges();
+    mockModalService.open.mockReturnValue({
+      result: Promise.reject('dismissed')
+    });
+
+    component.openDeleteModal({}, sampleGames[0]);
+    await fixture.whenStable();
+
+    expect(mockGameService.deleteGame).not.toHaveBeenCalled();
+  });
+
+  it('should display error message when getGames fails', () => {
+    vi.mocked(mockGameService.getGames!).mockReturnValueOnce(throwError(() => new Error('Network error')));
+    component.loadGames();
+
+    expect(component.errorMessage()).toBe('Failed to load video games. Ensure the backend API is running.');
+    expect(component.isLoading()).toBe(false);
+  });
+
+  it('should handle getMetadata error gracefully without crashing', () => {
+    vi.mocked(mockGameService.getMetadata!).mockReturnValueOnce(throwError(() => new Error('Metadata error')));
+    component.loadMetadata();
+
+    expect(component.platforms().length).toBe(0);
+    expect(component.genres().length).toBe(0);
   });
 });

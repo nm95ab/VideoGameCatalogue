@@ -56,4 +56,28 @@ public class ResultTests
         error.Code.Should().Be("Code");
         error.Description.Should().Be("Description");
     }
+
+    [Fact]
+    public void NotFoundError_ShouldCreateExpectedError()
+    {
+        var error = Error.NotFound("NotFound.Code", "Item not found");
+        error.Code.Should().Be("NotFound.Code");
+        error.Description.Should().Be("Item not found");
+    }
+
+    private sealed class TestResult(bool isSuccess, Error error) : Result(isSuccess, error);
+
+    [Fact]
+    public void Constructor_WhenSuccessWithNonNoneError_ShouldThrowInvalidOperationException()
+    {
+        var act = () => new TestResult(true, Error.Validation("Err", "Desc"));
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Success result cannot contain an error.*");
+    }
+
+    [Fact]
+    public void Constructor_WhenFailureWithNoneError_ShouldThrowInvalidOperationException()
+    {
+        var act = () => new TestResult(false, Error.None);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Failure result must contain an error.*");
+    }
 }

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameEditComponent } from './game-edit.component';
 import { GameService } from '../../core/services/game.service';
@@ -24,7 +24,7 @@ describe('GameEditComponent', () => {
     updatedAtUtc: null
   };
 
-  const setupTestBed = async (routeParams: Record<string, string> = {}) => {
+  const setupTestBed = async (routeParams: Record<string, string> = {}, serviceOverrides: Partial<GameService> = {}) => {
     mockGameService = {
       getMetadata: vi.fn().mockReturnValue(of({
         platforms: ['PC', 'PlayStation 5'],
@@ -33,7 +33,8 @@ describe('GameEditComponent', () => {
       })),
       getGameById: vi.fn().mockReturnValue(of(existingGame)),
       createGame: vi.fn().mockReturnValue(of(existingGame)),
-      updateGame: vi.fn().mockReturnValue(of(existingGame))
+      updateGame: vi.fn().mockReturnValue(of(existingGame)),
+      ...serviceOverrides
     };
 
     mockRouter = {
@@ -106,6 +107,35 @@ describe('GameEditComponent', () => {
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
     });
 
+    it('should handle create error gracefully', () => {
+      vi.mocked(mockGameService.createGame!).mockReturnValueOnce(
+        throwError(() => ({ error: { detail: 'Database error occurred' } }))
+      );
+
+      component.gameForm.patchValue({
+        title: 'Half-Life 2',
+        platform: 'PC',
+        genre: 'Action',
+        releaseYear: 2004,
+        rating: 'Mature 17+',
+        description: 'FPS classic'
+      });
+
+      component.onSubmit();
+
+      expect(component.isSaving()).toBe(false);
+      expect(component.errorMessage()).toBe('Database error occurred');
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+    });
+
+    it('should not submit if form is invalid', () => {
+      component.gameForm.patchValue({ title: '' });
+      component.onSubmit();
+
+      expect(mockGameService.createGame).not.toHaveBeenCalled();
+      expect(component.gameForm.get('title')?.touched).toBe(true);
+    });
+
     it('should navigate back on cancel', () => {
       component.onCancel();
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
@@ -141,5 +171,57 @@ describe('GameEditComponent', () => {
       );
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
     });
+
+    it('should handle update error gracefully', () => {
+      vi.mocked(mockGameService.updateGame!).mockReturnValueOnce(
+        throwError(() => ({ error: { detail: 'Update failed' } }))
+      );
+
+      component.gameForm.patchValue({
+        title: 'Portal 2 Reloaded'
+      });
+
+      component.onSubmit();
+
+      expect(component.isSaving()).toBe(false);
+      expect(component.errorMessage()).toBe('Update failed');
+    });
+
+    it('should handle error when loading game by id', async () => {
+      TestBed.resetTestingModule();
+      await setupTestBed(
+        { id: 'non-existent' },
+        { getGameById: vi.fn().mockReturnValue(throwError(() => new Error('Not found'))) }
+      );
+
+      expect(component.errorMessage()).toBe('Failed to load the video game details.');
+      expect(component.isLoading()).toBe(false);
+    });
+
+    it('should correctly evaluate isFieldInvalid', () => {
+      const titleControl = component.gameForm.get('title');
+      titleControl?.setValue('');
+      titleControl?.markAsTouched();
+
+      expect(component.isFieldInvalid('title')).toBe(true);
+
+      titleControl?.setValue('Valid Title');
+      expect(component.isFieldInvalid('title')).toBe(false);
+
+      expect(component.isFieldInvalid('nonExistentField')).toBe(false);
+    });
+
+    it('should use fallback options when metadata service fails', async () => {
+      TestBed.resetTestingModule();
+      await setupTestBed(
+        {},
+        { getMetadata: vi.fn().mockReturnValue(throwError(() => new Error('Service down'))) }
+      );
+
+      expect(component.platforms().length).toBeGreaterThan(0);
+      expect(component.platforms()).toContain('PC');
+      expect(component.genres()).toContain('Action');
+    });
   });
 });
+

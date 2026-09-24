@@ -173,6 +173,40 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
         (await _repository.ExistsAsync(game.Id)).Should().BeFalse();
     }
 
+    [Fact]
+    public async Task UpdateAsync_ModifiesExistingGameInDatabase()
+    {
+        // Arrange
+        var game = VideoGame.Create(
+            GameTitle.Create("Metroid Prime").Value,
+            Platform.Create("GameCube").Value,
+            Genre.Create("Action-Adventure").Value,
+            ReleaseYear.Create(2002).Value,
+            Rating.Create("Teen").Value,
+            "First person adventure").Value;
+
+        await _repository.AddAsync(game);
+
+        // Act
+        game.UpdateDetails(
+            GameTitle.Create("Metroid Prime Remastered").Value,
+            Platform.Create("Nintendo Switch").Value,
+            Genre.Create("Action-Adventure").Value,
+            ReleaseYear.Create(2023).Value,
+            Rating.Create("Teen").Value,
+            "Remastered version for Switch");
+
+        await _repository.UpdateAsync(game);
+
+        // Assert
+        var updated = await _repository.GetByIdAsync(game.Id);
+        updated.Should().NotBeNull();
+        updated!.Title.Value.Should().Be("Metroid Prime Remastered");
+        updated.Platform.Value.Should().Be("Nintendo Switch");
+        updated.ReleaseYear.Value.Should().Be(2023);
+        updated.Description.Should().Be("Remastered version for Switch");
+    }
+
     public void Dispose()
     {
         _context.Dispose();
