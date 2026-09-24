@@ -7,7 +7,6 @@ import { Subject, merge, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, tap, catchError } from 'rxjs/operators';
 import {
   NgbAlertModule,
-  NgbTooltipModule,
   NgbPaginationModule,
   NgbProgressbarModule,
   NgbDropdownModule
@@ -22,7 +21,6 @@ import { Game } from '../../core/models/game.model';
     CommonModule,
     FormsModule,
     NgbAlertModule,
-    NgbTooltipModule,
     NgbPaginationModule,
     NgbProgressbarModule,
     NgbDropdownModule

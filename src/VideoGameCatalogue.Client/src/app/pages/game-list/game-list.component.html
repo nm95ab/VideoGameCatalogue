@@ -6,8 +6,6 @@
   <button
     class="btn btn-primary d-flex align-items-center gap-2"
     (click)="navigateToAdd()"
-    ngbTooltip="Create a new catalogue entry"
-    placement="left"
   >
     <span>➕</span> Add New Game
   </button>
@@ -76,8 +74,6 @@
         <button
           class="btn btn-outline-secondary w-100"
           (click)="resetFilters()"
-          ngbTooltip="Reset all search and filter criteria"
-          placement="top"
         >
           Reset
         </button>
@@ -127,39 +123,24 @@
                   <small
                     class="text-muted d-block text-truncate"
                     style="max-width: 320px;"
-                    [ngbTooltip]="game.description"
-                    container="body"
-                    placement="top"
                   >
                     {{ game.description }}
                   </small>
                 }
               </td>
               <td>
-                <span
-                  class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle"
-                  ngbTooltip="Platform: {{ game.platform }}"
-                  container="body"
-                >
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
                   {{ game.platform }}
                 </span>
               </td>
               <td>
-                <span
-                  class="badge bg-info-subtle text-info-emphasis border border-info-subtle"
-                  ngbTooltip="Genre: {{ game.genre }}"
-                  container="body"
-                >
+                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
                   {{ game.genre }}
                 </span>
               </td>
               <td>{{ game.releaseYear }}</td>
               <td>
-                <span
-                  class="badge bg-dark-subtle text-dark-emphasis border border-dark-subtle"
-                  ngbTooltip="ESRB Rating: {{ game.rating }}"
-                  container="body"
-                >
+                <span class="badge bg-dark-subtle text-dark-emphasis border border-dark-subtle">
                   {{ game.rating }}
                 </span>
               </td>
@@ -167,8 +148,6 @@
                 <button
                   class="btn btn-sm btn-outline-primary"
                   (click)="navigateToEdit(game.id)"
-                  ngbTooltip="Edit this game entry"
-                  container="body"
                 >
                   Edit
                 </button>
