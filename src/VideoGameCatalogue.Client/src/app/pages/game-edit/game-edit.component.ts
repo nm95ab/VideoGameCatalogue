@@ -2,14 +2,21 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { NgbAlertModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbAlertModule, NgbTooltipModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
 import { GameService } from '../../core/services/game.service';
 import { CreateGameRequest, UpdateGameRequest } from '../../core/models/game.model';
 
 @Component({
   selector: 'app-game-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgbAlertModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    NgbAlertModule,
+    NgbTooltipModule,
+    NgbProgressbarModule
+  ],
   templateUrl: './game-edit.component.html',
   styleUrls: ['./game-edit.component.scss']
 })

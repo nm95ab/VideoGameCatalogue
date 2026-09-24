@@ -1,18 +1,33 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, merge, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, tap, catchError } from 'rxjs/operators';
-import { NgbModal, NgbAlertModule } from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbModal,
+  NgbAlertModule,
+  NgbTooltipModule,
+  NgbPaginationModule,
+  NgbProgressbarModule,
+  NgbDropdownModule
+} from '@ng-bootstrap/ng-bootstrap';
 import { GameService } from '../../core/services/game.service';
 import { Game } from '../../core/models/game.model';
 
 @Component({
   selector: 'app-game-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgbAlertModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    NgbAlertModule,
+    NgbTooltipModule,
+    NgbPaginationModule,
+    NgbProgressbarModule,
+    NgbDropdownModule
+  ],
   templateUrl: './game-list.component.html',
   styleUrls: ['./game-list.component.scss']
 })
@@ -33,6 +48,16 @@ export class GameListComponent implements OnInit {
   searchTerm = '';
   selectedPlatform = '';
   selectedGenre = '';
+
+  readonly page = signal<number>(1);
+  readonly pageSize = signal<number>(6);
+  readonly pageSizeOptions = [6, 12, 24];
+
+  readonly pagedGames = computed(() => {
+    const list = this.games();
+    const start = (this.page() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
+  });
 
   readonly platforms = signal<string[]>([]);
   readonly genres = signal<string[]>([]);
@@ -106,10 +131,12 @@ export class GameListComponent implements OnInit {
 
   onSearchInput(term: string): void {
     this.searchTerm = term;
+    this.page.set(1);
     this.searchSubject.next(term);
   }
 
   onFilterChange(): void {
+    this.page.set(1);
     this.filterChangeSubject.next();
   }
 
@@ -117,6 +144,7 @@ export class GameListComponent implements OnInit {
     this.searchTerm = '';
     this.selectedPlatform = '';
     this.selectedGenre = '';
+    this.page.set(1);
     this.filterChangeSubject.next();
   }
 

@@ -213,4 +213,32 @@ describe('GameListComponent', () => {
     expect(component.platforms().length).toBe(0);
     expect(component.genres().length).toBe(0);
   });
+
+  it('should slice pagedGames correctly according to page and pageSize', () => {
+    fixture.detectChanges();
+    component.pageSize.set(1);
+    component.page.set(1);
+
+    expect(component.pagedGames().length).toBe(1);
+    expect(component.pagedGames()[0].title).toBe('Super Mario World');
+
+    component.page.set(2);
+    expect(component.pagedGames().length).toBe(0);
+  });
+
+  it('should reset page to 1 when search or filters change', () => {
+    fixture.detectChanges();
+    component.page.set(2);
+
+    component.onSearchInput('Zelda');
+    expect(component.page()).toBe(1);
+
+    component.page.set(3);
+    component.onFilterChange();
+    expect(component.page()).toBe(1);
+
+    component.page.set(4);
+    component.resetFilters();
+    expect(component.page()).toBe(1);
+  });
 });

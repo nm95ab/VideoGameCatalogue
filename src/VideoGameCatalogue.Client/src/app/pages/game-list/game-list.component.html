@@ -3,8 +3,13 @@
     <h1 class="h2 mb-1">Video Game Catalogue</h1>
     <p class="text-muted mb-0">Browse, filter, and manage video game entries.</p>
   </div>
-  <button class="btn btn-primary d-flex align-items-center gap-2" (click)="navigateToAdd()">
-    <i class="bi bi-plus-circle"></i> Add New Game
+  <button
+    class="btn btn-primary d-flex align-items-center gap-2"
+    (click)="navigateToAdd()"
+    ngbTooltip="Create a new catalogue entry"
+    placement="left"
+  >
+    <span>➕</span> Add New Game
   </button>
 </div>
 
@@ -68,7 +73,12 @@
       </div>
 
       <div class="col-md-1 d-flex align-items-end">
-        <button class="btn btn-outline-secondary w-100" (click)="resetFilters()" title="Reset all filters">
+        <button
+          class="btn btn-outline-secondary w-100"
+          (click)="resetFilters()"
+          ngbTooltip="Reset all search and filter criteria"
+          placement="top"
+        >
           Reset
         </button>
       </div>
@@ -78,6 +88,7 @@
 
 <!-- Loading State -->
 @if (isLoading()) {
+  <ngb-progressbar type="primary" [value]="100" [striped]="true" [animated]="true" height="4px" class="mb-3 rounded"></ngb-progressbar>
   <div class="text-center py-5">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -108,29 +119,47 @@
           </tr>
         </thead>
         <tbody>
-          @for (game of games(); track game.id) {
+          @for (game of pagedGames(); track game.id) {
             <tr>
               <td>
                 <div class="fw-bold text-dark">{{ game.title }}</div>
                 @if (game.description) {
-                  <small class="text-muted d-block text-truncate" style="max-width: 320px;">
+                  <small
+                    class="text-muted d-block text-truncate"
+                    style="max-width: 320px;"
+                    [ngbTooltip]="game.description"
+                    container="body"
+                    placement="top"
+                  >
                     {{ game.description }}
                   </small>
                 }
               </td>
               <td>
-                <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
+                <span
+                  class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle"
+                  ngbTooltip="Platform: {{ game.platform }}"
+                  container="body"
+                >
                   {{ game.platform }}
                 </span>
               </td>
               <td>
-                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                <span
+                  class="badge bg-info-subtle text-info-emphasis border border-info-subtle"
+                  ngbTooltip="Genre: {{ game.genre }}"
+                  container="body"
+                >
                   {{ game.genre }}
                 </span>
               </td>
               <td>{{ game.releaseYear }}</td>
               <td>
-                <span class="badge bg-dark-subtle text-dark-emphasis border border-dark-subtle">
+                <span
+                  class="badge bg-dark-subtle text-dark-emphasis border border-dark-subtle"
+                  ngbTooltip="ESRB Rating: {{ game.rating }}"
+                  container="body"
+                >
                   {{ game.rating }}
                 </span>
               </td>
@@ -138,14 +167,16 @@
                 <button
                   class="btn btn-sm btn-outline-primary me-2"
                   (click)="navigateToEdit(game.id)"
-                  title="Edit entry"
+                  ngbTooltip="Edit this game entry"
+                  container="body"
                 >
                   Edit
                 </button>
                 <button
                   class="btn btn-sm btn-outline-danger"
                   (click)="openDeleteModal(deleteModal, game)"
-                  title="Delete entry"
+                  ngbTooltip="Delete entry permanently"
+                  container="body"
                 >
                   Delete
                 </button>
@@ -155,8 +186,37 @@
         </tbody>
       </table>
     </div>
-    <div class="card-footer bg-white text-muted small d-flex justify-content-between align-items-center py-3">
-      <span>Showing {{ games().length }} game{{ games().length === 1 ? '' : 's' }}</span>
+    <div class="card-footer bg-white text-muted small d-flex flex-column flex-md-row justify-content-between align-items-center py-3 gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <span>Showing {{ pagedGames().length }} of {{ games().length }} game{{ games().length === 1 ? '' : 's' }}</span>
+        @if (games().length > pageSizeOptions[0]) {
+          <span class="text-muted">&bull;</span>
+          <label for="pageSizeSelect" class="small">Per page:</label>
+          <select
+            id="pageSizeSelect"
+            class="form-select form-select-sm w-auto d-inline-block"
+            [ngModel]="pageSize()"
+            (ngModelChange)="pageSize.set($event); page.set(1)"
+          >
+            @for (opt of pageSizeOptions; track opt) {
+              <option [value]="opt">{{ opt }}</option>
+            }
+          </select>
+        }
+      </div>
+      @if (games().length > pageSize()) {
+        <ngb-pagination
+          [page]="page()"
+          (pageChange)="page.set($event)"
+          [pageSize]="pageSize()"
+          [collectionSize]="games().length"
+          [maxSize]="5"
+          [rotate]="true"
+          [boundaryLinks]="true"
+          class="d-flex mb-0"
+          aria-label="Catalogue pagination"
+        ></ngb-pagination>
+      }
     </div>
   </div>
 }
@@ -165,14 +225,14 @@
 <ng-template #deleteModal let-modal>
   <div class="modal-header">
     <h5 class="modal-title" id="modal-title">Confirm Deletion</h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('cancel')"></button>
   </div>
   <div class="modal-body">
     <p>Are you sure you want to delete this game entry from the catalogue?</p>
     <p class="text-danger small mb-0">This action cannot be undone.</p>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Cancel</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss('cancel')">Cancel</button>
     <button type="button" class="btn btn-danger" (click)="modal.close('confirm')">Delete Game</button>
   </div>
 </ng-template>

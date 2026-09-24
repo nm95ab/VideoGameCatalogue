@@ -24,6 +24,7 @@
 
     <!-- Loading State for Edit Mode -->
     @if (isLoading()) {
+      <ngb-progressbar type="primary" [value]="100" [striped]="true" [animated]="true" height="4px" class="mb-3 rounded"></ngb-progressbar>
       <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Loading...</span>
@@ -31,6 +32,10 @@
         <p class="text-muted mt-2">Loading game details...</p>
       </div>
     } @else {
+      @if (isSaving()) {
+        <ngb-progressbar type="primary" [value]="100" [striped]="true" [animated]="true" height="4px" class="mb-3 rounded"></ngb-progressbar>
+      }
+
       <!-- Edit/Create Form Card -->
       <div class="card shadow-sm border-0">
         <div class="card-body p-4">
@@ -39,6 +44,7 @@
             <div class="mb-3">
               <label for="title" class="form-label fw-semibold">
                 Game Title <span class="text-danger">*</span>
+                <span class="badge rounded-pill bg-light text-secondary border ms-1" ngbTooltip="Maximum 150 characters">?</span>
               </label>
               <input
                 id="title"
@@ -108,6 +114,7 @@
               <div class="col-md-6">
                 <label for="releaseYear" class="form-label fw-semibold">
                   Release Year <span class="text-danger">*</span>
+                  <span class="badge rounded-pill bg-light text-secondary border ms-1" ngbTooltip="Accepts years between 1950 and next year">?</span>
                 </label>
                 <input
                   id="releaseYear"
@@ -127,6 +134,7 @@
               <div class="col-md-6">
                 <label for="rating" class="form-label fw-semibold">
                   ESRB / Age Rating <span class="text-danger">*</span>
+                  <span class="badge rounded-pill bg-light text-secondary border ms-1" ngbTooltip="Official age rating according to ESRB standards">?</span>
                 </label>
                 <select
                   id="rating"
@@ -147,7 +155,10 @@
 
             <!-- Description -->
             <div class="mb-4">
-              <label for="description" class="form-label fw-semibold">Description</label>
+              <label for="description" class="form-label fw-semibold">
+                Description
+                <span class="badge rounded-pill bg-light text-secondary border ms-1" ngbTooltip="Optional synopsis up to 2,000 characters">?</span>
+              </label>
               <textarea
                 id="description"
                 class="form-control"
