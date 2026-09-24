@@ -14,12 +14,14 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
 
     public EfCoreVideoGameRepositoryTests()
     {
+        var connectionString = "Server=127.0.0.1,1433;Database=VideoGameCatalogueRepoTestsDb;User Id=sa;Password=YourStrong@Password123!;TrustServerCertificate=True;MultipleActiveResultSets=true;Connect Timeout=15";
         var options = new DbContextOptionsBuilder<VideoGameCatalogueDbContext>()
-            .UseInMemoryDatabase(databaseName: $"TestDb_{Guid.NewGuid()}")
+            .UseSqlServer(connectionString)
             .Options;
 
         _context = new VideoGameCatalogueDbContext(options);
         _context.Database.EnsureCreated();
+        _context.VideoGames.ExecuteDelete();
 
         _repository = new EfCoreVideoGameRepository(_context);
     }

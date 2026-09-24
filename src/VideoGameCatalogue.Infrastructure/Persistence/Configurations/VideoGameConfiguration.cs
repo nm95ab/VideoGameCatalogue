@@ -13,39 +13,44 @@ public class VideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Title)
-            .HasConversion(
-                title => title.Value,
-                value => GameTitle.Create(value).Value)
-            .HasMaxLength(GameTitle.MaxLength)
-            .IsRequired();
+        builder.ComplexProperty(x => x.Title, b =>
+        {
+            b.Property(p => p.Value)
+                .HasColumnName("Title")
+                .HasMaxLength(GameTitle.MaxLength)
+                .IsRequired();
+        });
 
-        builder.Property(x => x.Platform)
-            .HasConversion(
-                platform => platform.Value,
-                value => Platform.Create(value).Value)
-            .HasMaxLength(Platform.MaxLength)
-            .IsRequired();
+        builder.ComplexProperty(x => x.Platform, b =>
+        {
+            b.Property(p => p.Value)
+                .HasColumnName("Platform")
+                .HasMaxLength(Platform.MaxLength)
+                .IsRequired();
+        });
 
-        builder.Property(x => x.Genre)
-            .HasConversion(
-                genre => genre.Value,
-                value => Genre.Create(value).Value)
-            .HasMaxLength(Genre.MaxLength)
-            .IsRequired();
+        builder.ComplexProperty(x => x.Genre, b =>
+        {
+            b.Property(p => p.Value)
+                .HasColumnName("Genre")
+                .HasMaxLength(Genre.MaxLength)
+                .IsRequired();
+        });
 
-        builder.Property(x => x.ReleaseYear)
-            .HasConversion(
-                year => year.Value,
-                value => ReleaseYear.Create(value).Value)
-            .IsRequired();
+        builder.ComplexProperty(x => x.ReleaseYear, b =>
+        {
+            b.Property(p => p.Value)
+                .HasColumnName("ReleaseYear")
+                .IsRequired();
+        });
 
-        builder.Property(x => x.Rating)
-            .HasConversion(
-                rating => rating.Value,
-                value => Rating.Create(value).Value)
-            .HasMaxLength(Rating.MaxLength)
-            .IsRequired();
+        builder.ComplexProperty(x => x.Rating, b =>
+        {
+            b.Property(p => p.Value)
+                .HasColumnName("Rating")
+                .HasMaxLength(Rating.MaxLength)
+                .IsRequired();
+        });
 
         builder.Property(x => x.Description)
             .HasMaxLength(2000)
@@ -55,9 +60,5 @@ public class VideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
             .IsRequired();
 
         builder.Property(x => x.UpdatedAtUtc);
-
-        builder.HasIndex(x => x.Title);
-        builder.HasIndex(x => x.Platform);
-        builder.HasIndex(x => x.Genre);
     }
 }

@@ -13,54 +13,46 @@ public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IV
         CancellationToken cancellationToken = default)
     {
         IQueryable<VideoGame> query = context.VideoGames.AsNoTracking();
-        var isRelational = context.Database.IsRelational();
+        
 
-        query = ApplySearchFilter(query, searchTerm, isRelational);
-        query = ApplyPlatformFilter(query, platform, isRelational);
-        query = ApplyGenreFilter(query, genre, isRelational);
-        query = ApplyOrdering(query, isRelational);
+        query = ApplySearchFilter(query, searchTerm);
+        query = ApplyPlatformFilter(query, platform);
+        query = ApplyGenreFilter(query, genre);
+        query = ApplyOrdering(query);
 
         return await query.ToListAsync(cancellationToken);
     }
 
-    private static IQueryable<VideoGame> ApplySearchFilter(IQueryable<VideoGame> query, string? searchTerm, bool isRelational)
+    private static IQueryable<VideoGame> ApplySearchFilter(IQueryable<VideoGame> query, string? searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
             return query;
 
         var search = searchTerm.Trim();
-        return isRelational
-            ? query.Where(g => ((string)(object)g.Title).Contains(search) || g.Description.Contains(search))
-            : query.Where(g => g.Title.Value.Contains(search) || g.Description.Contains(search));
+        return query.Where(g => g.Title.Value.Contains(search) || g.Description.Contains(search));
     }
 
-    private static IQueryable<VideoGame> ApplyPlatformFilter(IQueryable<VideoGame> query, string? platform, bool isRelational)
+    private static IQueryable<VideoGame> ApplyPlatformFilter(IQueryable<VideoGame> query, string? platform)
     {
         if (string.IsNullOrWhiteSpace(platform))
             return query;
 
         var targetPlatform = platform.Trim();
-        return isRelational
-            ? query.Where(g => (string)(object)g.Platform == targetPlatform)
-            : query.Where(g => g.Platform.Value == targetPlatform);
+        return query.Where(g => g.Platform.Value == targetPlatform);
     }
 
-    private static IQueryable<VideoGame> ApplyGenreFilter(IQueryable<VideoGame> query, string? genre, bool isRelational)
+    private static IQueryable<VideoGame> ApplyGenreFilter(IQueryable<VideoGame> query, string? genre)
     {
         if (string.IsNullOrWhiteSpace(genre))
             return query;
 
         var targetGenre = genre.Trim();
-        return isRelational
-            ? query.Where(g => (string)(object)g.Genre == targetGenre)
-            : query.Where(g => g.Genre.Value == targetGenre);
+        return query.Where(g => g.Genre.Value == targetGenre);
     }
 
-    private static IQueryable<VideoGame> ApplyOrdering(IQueryable<VideoGame> query, bool isRelational)
+    private static IQueryable<VideoGame> ApplyOrdering(IQueryable<VideoGame> query)
     {
-        return isRelational
-            ? query.OrderBy(g => g.Title)
-            : query.OrderBy(g => g.Title.Value);
+        return query.OrderBy(g => g.Title.Value);
     }
 
     public async Task<VideoGame?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

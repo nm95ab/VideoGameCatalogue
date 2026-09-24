@@ -28,21 +28,21 @@ public sealed class SqlServerQueryTranslationTests
         IQueryable<VideoGame> query = _context.VideoGames.AsNoTracking();
 
         query = query.Where(g =>
-            ((string)(object)g.Title).Contains(search) ||
+            g.Title.Value.Contains(search) ||
             g.Description.Contains(search));
 
-        query = query.Where(g => (string)(object)g.Platform == platform);
-        query = query.Where(g => (string)(object)g.Genre == genre);
-        query = query.OrderBy(g => g.Title);
+        query = query.Where(g => g.Platform.Value == platform);
+        query = query.Where(g => g.Genre.Value == genre);
+        query = query.OrderBy(g => g.Title.Value);
 
         var sql = query.ToQueryString();
 
         sql.Should().NotBeNullOrWhiteSpace();
         sql.Should().Contain("FROM [VideoGames] AS [v]");
         sql.Should().Contain("WHERE");
-        sql.Should().Contain("CAST([v].[Title] AS nvarchar(max)) LIKE");
-        sql.Should().Contain("CAST([v].[Platform] AS nvarchar(max)) = @platform");
-        sql.Should().Contain("CAST([v].[Genre] AS nvarchar(max)) = @genre");
+        sql.Should().Contain("[v].[Title] LIKE");
+        sql.Should().Contain("[v].[Platform] = @platform");
+        sql.Should().Contain("[v].[Genre] = @genre");
         sql.Should().Contain("ORDER BY [v].[Title]");
     }
 }

@@ -80,3 +80,7 @@ desktop.ini
 .env
 .env.*
 !.env.example
+
+# GitNexus
+.gitnexus/
+
