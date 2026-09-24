@@ -1,7 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, merge, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, tap, catchError } from 'rxjs/operators';
 import { NgbModal, NgbAlertModule } from '@ng-bootstrap/ng-bootstrap';
 import { GameService } from '../../core/services/game.service';
 import { Game } from '../../core/models/game.model';
@@ -17,6 +20,10 @@ export class GameListComponent implements OnInit {
   private readonly gameService = inject(GameService);
   private readonly router = inject(Router);
   private readonly modalService = inject(NgbModal);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly searchSubject = new Subject<string>();
+  private readonly filterChangeSubject = new Subject<void>();
 
   readonly games = signal<Game[]>([]);
   readonly isLoading = signal<boolean>(true);
@@ -30,48 +37,77 @@ export class GameListComponent implements OnInit {
   readonly platforms = signal<string[]>([]);
   readonly genres = signal<string[]>([]);
 
+  constructor() {
+    this.setupReactivePipeline();
+  }
+
   ngOnInit(): void {
     this.loadMetadata();
     this.loadGames();
   }
 
+  private setupReactivePipeline(): void {
+    const debouncedSearch$ = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    );
+
+    const immediateFilter$ = this.filterChangeSubject.asObservable();
+
+    merge(debouncedSearch$, immediateFilter$)
+      .pipe(
+        tap(() => {
+          this.isLoading.set(true);
+          this.errorMessage.set(null);
+        }),
+        switchMap(() =>
+          this.gameService.getGames(this.searchTerm, this.selectedPlatform, this.selectedGenre).pipe(
+            catchError(() => {
+              this.errorMessage.set('Failed to load video games. Ensure the backend API is running.');
+              return of([] as Game[]);
+            })
+          )
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((games) => {
+        this.games.set(games);
+        this.isLoading.set(false);
+      });
+  }
+
   loadMetadata(): void {
-    this.gameService.getMetadata().subscribe({
-      next: (meta) => {
-        this.platforms.set(meta.platforms);
-        this.genres.set(meta.genres);
-      },
-      error: () => {
-        // Fallback gracefully
-      }
-    });
+    this.gameService.getMetadata()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (meta) => {
+          this.platforms.set(meta.platforms);
+          this.genres.set(meta.genres);
+        },
+        error: () => {
+          // Fallback gracefully
+        }
+      });
   }
 
   loadGames(): void {
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
+    this.filterChangeSubject.next();
+  }
 
-    this.gameService.getGames(this.searchTerm, this.selectedPlatform, this.selectedGenre).subscribe({
-      next: (data) => {
-        this.games.set(data);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set('Failed to load video games. Ensure the backend API is running.');
-        this.isLoading.set(false);
-      }
-    });
+  onSearchInput(term: string): void {
+    this.searchTerm = term;
+    this.searchSubject.next(term);
   }
 
   onFilterChange(): void {
-    this.loadGames();
+    this.filterChangeSubject.next();
   }
 
   resetFilters(): void {
     this.searchTerm = '';
     this.selectedPlatform = '';
     this.selectedGenre = '';
-    this.loadGames();
+    this.filterChangeSubject.next();
   }
 
   navigateToAdd(): void {
@@ -96,14 +132,16 @@ export class GameListComponent implements OnInit {
   }
 
   private executeDelete(game: Game): void {
-    this.gameService.deleteGame(game.id).subscribe({
-      next: () => {
-        this.successMessage.set(`"${game.title}" was successfully deleted.`);
-        this.loadGames();
-      },
-      error: () => {
-        this.errorMessage.set(`Failed to delete "${game.title}".`);
-      }
-    });
+    this.gameService.deleteGame(game.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.successMessage.set(`"${game.title}" was successfully deleted.`);
+          this.loadGames();
+        },
+        error: () => {
+          this.errorMessage.set(`Failed to delete "${game.title}".`);
+        }
+      });
   }
 }

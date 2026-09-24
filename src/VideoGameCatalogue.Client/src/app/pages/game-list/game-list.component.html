@@ -33,7 +33,7 @@
           class="form-control"
           placeholder="Search by title or description..."
           [(ngModel)]="searchTerm"
-          (ngModelChange)="onFilterChange()"
+          (ngModelChange)="onSearchInput($event)"
         />
       </div>
 

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameListComponent } from './game-list.component';
 import { GameService } from '../../core/services/game.service';
@@ -86,5 +86,70 @@ describe('GameListComponent', () => {
   it('should navigate to edit page', () => {
     component.navigateToEdit('11111111-1111-1111-1111-111111111111');
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/games', '11111111-1111-1111-1111-111111111111', 'edit']);
+  });
+
+  it('should debounce rapid search inputs and make only one call after 300ms', () => {
+    vi.useFakeTimers();
+    try {
+      fixture.detectChanges();
+      vi.mocked(mockGameService.getGames!).mockClear();
+
+      component.onSearchInput('M');
+      component.onSearchInput('Ma');
+      component.onSearchInput('Mar');
+      component.onSearchInput('Mario');
+
+      expect(mockGameService.getGames).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(299);
+      expect(mockGameService.getGames).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1);
+      expect(mockGameService.getGames).toHaveBeenCalledTimes(1);
+      expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should not trigger redundant search if term is not distinct', () => {
+    vi.useFakeTimers();
+    try {
+      fixture.detectChanges();
+      vi.mocked(mockGameService.getGames!).mockClear();
+
+      component.onSearchInput('Mario');
+      vi.advanceTimersByTime(300);
+      expect(mockGameService.getGames).toHaveBeenCalledTimes(1);
+
+      component.onSearchInput('Mario');
+      vi.advanceTimersByTime(300);
+      expect(mockGameService.getGames).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should cancel previous pending request via switchMap when a new search occurs', () => {
+    fixture.detectChanges();
+
+    let subscriber1Cancelled = false;
+    const slowObservable$ = new Observable<Game[]>((subscriber) => {
+      return () => {
+        subscriber1Cancelled = true;
+      };
+    });
+
+    vi.mocked(mockGameService.getGames!).mockReturnValueOnce(slowObservable$);
+    component.onFilterChange();
+
+    expect(subscriber1Cancelled).toBe(false);
+
+    // Trigger second request immediately
+    vi.mocked(mockGameService.getGames!).mockReturnValueOnce(of(sampleGames));
+    component.onFilterChange();
+
+    expect(subscriber1Cancelled).toBe(true);
+    expect(component.games().length).toBe(1);
   });
 });
