@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using VideoGameCatalogue.Domain.Common;
 using VideoGameCatalogue.Domain.Games;
+using VideoGameCatalogue.Domain.Games.ValueObjects;
 using VideoGameCatalogue.Domain.Ports;
 
 namespace VideoGameCatalogue.Infrastructure.Persistence.Repositories;
@@ -18,6 +19,7 @@ public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IV
         string? searchTerm = null,
         string? platform = null,
         string? genre = null,
+        string? era = null,
         int pageNumber = 1,
         int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -30,6 +32,7 @@ public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IV
         query = ApplySearchFilter(query, searchTerm);
         query = ApplyPlatformFilter(query, platform);
         query = ApplyGenreFilter(query, genre);
+        query = ApplyEraFilter(query, era);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -53,14 +56,15 @@ public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IV
         string? searchTerm = null,
         string? platform = null,
         string? genre = null,
+        string? era = null,
         CancellationToken cancellationToken = default)
     {
         IQueryable<VideoGame> query = context.VideoGames.AsNoTracking();
-        
 
         query = ApplySearchFilter(query, searchTerm);
         query = ApplyPlatformFilter(query, platform);
         query = ApplyGenreFilter(query, genre);
+        query = ApplyEraFilter(query, era);
         query = ApplyOrdering(query);
 
         return await query.ToListAsync(cancellationToken);
@@ -91,6 +95,25 @@ public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IV
 
         var targetGenre = genre.Trim();
         return query.Where(g => g.Genre.Value == targetGenre);
+    }
+
+    private static IQueryable<VideoGame> ApplyEraFilter(IQueryable<VideoGame> query, string? eraKey)
+    {
+        if (string.IsNullOrWhiteSpace(eraKey))
+            return query;
+
+        var era = GamingEra.FromKey(eraKey);
+        if (era is null)
+            return query;
+
+        var startYear = era.Value.StartYear;
+        if (era.Value.EndYear.HasValue)
+        {
+            var endYear = era.Value.EndYear.Value;
+            return query.Where(g => g.ReleaseYear.Value >= startYear && g.ReleaseYear.Value <= endYear);
+        }
+
+        return query.Where(g => g.ReleaseYear.Value >= startYear);
     }
 
     private static IQueryable<VideoGame> ApplyOrdering(IQueryable<VideoGame> query)

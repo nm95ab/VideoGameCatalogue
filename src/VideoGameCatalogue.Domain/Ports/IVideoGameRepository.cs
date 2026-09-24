@@ -17,6 +17,7 @@ public interface IVideoGameRepository
         string? searchTerm = null,
         string? platform = null,
         string? genre = null,
+        string? era = null,
         int pageNumber = 1,
         int pageSize = 10,
         CancellationToken cancellationToken = default);
@@ -25,6 +26,7 @@ public interface IVideoGameRepository
         string? searchTerm = null,
         string? platform = null,
         string? genre = null,
+        string? era = null,
         CancellationToken cancellationToken = default);
 
     Task<VideoGame?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

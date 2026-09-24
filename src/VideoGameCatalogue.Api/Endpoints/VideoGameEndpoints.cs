@@ -35,6 +35,7 @@ public static class VideoGameEndpoints
         [FromQuery] string? search,
         [FromQuery] string? platform,
         [FromQuery] string? genre,
+        [FromQuery] string? era,
         [FromQuery] int? page,
         [FromQuery] int? pageSize,
         CancellationToken ct)
@@ -43,6 +44,7 @@ public static class VideoGameEndpoints
             search,
             platform,
             genre,
+            era,
             page ?? 1,
             pageSize ?? 10,
             ct);

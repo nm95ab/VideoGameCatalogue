@@ -185,6 +185,17 @@
                     Release year must be between 1950 and {{ currentYear }}.
                   </div>
                 }
+                @if (eraInsight(); as insight) {
+                  @if (insight.era; as era) {
+                    <div class="mt-2 p-2 rounded bg-light border d-flex align-items-center justify-content-between small">
+                      <div>
+                        <span class="me-1">{{ era.icon }}</span>
+                        <strong>{{ era.displayTitle }}</strong>
+                        <span class="text-muted ms-1">({{ insight.decade }} &bull; {{ insight.ageInYears }} yrs old)</span>
+                      </div>
+                    </div>
+                  }
+                }
               </div>
 
               <div class="col-md-6">

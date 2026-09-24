@@ -9,6 +9,16 @@ public readonly record struct ReleaseYear
 
     private ReleaseYear(int value) => Value = value;
 
+    public GamingEra Era => GamingEra.ForYear(Value);
+
+    public string Decade => $"{Value / 10 * 10}s";
+
+    public int AgeInYears(int? referenceYear = null)
+    {
+        var current = referenceYear ?? TimeProvider.System.GetUtcNow().Year;
+        return Math.Max(0, current - Value);
+    }
+
     public static Result<ReleaseYear> Create(int year, int? currentYear = null)
     {
         var maxYear = currentYear ?? TimeProvider.System.GetUtcNow().Year;

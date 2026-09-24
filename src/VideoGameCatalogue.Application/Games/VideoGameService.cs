@@ -28,11 +28,12 @@ public class VideoGameService(
         string? searchTerm = null,
         string? platform = null,
         string? genre = null,
+        string? era = null,
         int pageNumber = 1,
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var pagedGames = await repository.GetPagedAsync(searchTerm, platform, genre, pageNumber, pageSize, cancellationToken);
+        var pagedGames = await repository.GetPagedAsync(searchTerm, platform, genre, era, pageNumber, pageSize, cancellationToken);
         var dtos = pagedGames.Items.Select(g => GameDto.FromDomain(g, imageStorage)).ToList();
         return new PagedResult<GameDto>(dtos, pagedGames.PageNumber, pagedGames.PageSize, pagedGames.TotalCount);
     }
@@ -41,9 +42,10 @@ public class VideoGameService(
         string? searchTerm = null,
         string? platform = null,
         string? genre = null,
+        string? era = null,
         CancellationToken cancellationToken = default)
     {
-        var games = await repository.GetAllAsync(searchTerm, platform, genre, cancellationToken);
+        var games = await repository.GetAllAsync(searchTerm, platform, genre, era, cancellationToken);
         return games.Select(g => GameDto.FromDomain(g, imageStorage)).ToList();
     }
 
@@ -134,8 +136,18 @@ public class VideoGameService(
         var platforms = await lookupRepository.GetPlatformsAsync(cancellationToken);
         var genres = await lookupRepository.GetGenresAsync(cancellationToken);
         var ratings = await lookupRepository.GetRatingsAsync(cancellationToken);
+        var eras = GamingEra.All.Select(e => new EraDto(
+            e.Key,
+            e.Generation,
+            e.Name,
+            e.DisplayTitle,
+            e.Icon,
+            e.BadgeClass,
+            e.Description,
+            e.StartYear,
+            e.EndYear)).ToList();
 
-        return new CatalogueMetadataDto(platforms, genres, ratings);
+        return new CatalogueMetadataDto(platforms, genres, ratings, eras);
     }
 
     /// <summary>

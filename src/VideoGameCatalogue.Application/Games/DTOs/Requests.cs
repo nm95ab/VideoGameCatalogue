@@ -21,4 +21,5 @@ public record UpdateGameRequest(
 public record CatalogueMetadataDto(
     IReadOnlyList<string> Platforms,
     IReadOnlyList<string> Genres,
-    IReadOnlyList<string> Ratings);
+    IReadOnlyList<string> Ratings,
+    IReadOnlyList<EraDto>? Eras = null);

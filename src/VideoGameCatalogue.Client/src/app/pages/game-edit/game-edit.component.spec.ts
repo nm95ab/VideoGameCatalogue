@@ -32,7 +32,31 @@ describe('GameEditComponent', () => {
       getMetadata: vi.fn().mockReturnValue(of({
         platforms: ['PC', 'PlayStation 5'],
         genres: ['Puzzle', 'Action'],
-        ratings: ['Everyone', 'Everyone 10+']
+        ratings: ['Everyone', 'Everyone 10+'],
+        eras: [
+          {
+            key: '16-bit',
+            generation: '4th Gen',
+            name: '16-Bit Era',
+            displayTitle: '4th Gen: 16-Bit Era',
+            icon: '🎮',
+            badgeClass: 'bg-primary-subtle',
+            description: 'SNES / Genesis',
+            startYear: 1987,
+            endYear: 1993
+          },
+          {
+            key: 'hd-generation',
+            generation: '7th Gen',
+            name: 'HD Generation',
+            displayTitle: '7th Gen: HD Generation',
+            icon: '🌟',
+            badgeClass: 'bg-secondary-subtle',
+            description: 'PS3 / Xbox 360',
+            startYear: 2005,
+            endYear: 2012
+          }
+        ]
       })),
       getGameById: vi.fn().mockReturnValue(of(existingGame)),
       createGame: vi.fn().mockReturnValue(of(existingGame)),
@@ -82,6 +106,17 @@ describe('GameEditComponent', () => {
       expect(component).toBeTruthy();
       expect(component.isEditMode).toBe(false);
       expect(component.gameForm).toBeDefined();
+    });
+
+    it('should compute eraInsight dynamically when releaseYear changes', () => {
+      component.gameForm.patchValue({ releaseYear: 1991 });
+      expect(component.eraInsight()).toBeDefined();
+      expect(component.eraInsight()?.era?.name).toBe('16-Bit Era');
+      expect(component.eraInsight()?.decade).toBe('1990s');
+
+      component.gameForm.patchValue({ releaseYear: 2011 });
+      expect(component.eraInsight()?.era?.name).toBe('HD Generation');
+      expect(component.eraInsight()?.decade).toBe('2010s');
     });
 
     it('should be invalid when title is empty', () => {

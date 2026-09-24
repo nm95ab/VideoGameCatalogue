@@ -16,7 +16,14 @@ export class GameService {
   private readonly imagesUrl = `${this.baseUrl}/images`;
   private metadata$: Observable<CatalogueMetadata> | null = null;
 
-  getGames(searchTerm?: string, platform?: string, genre?: string, page: number = 1, pageSize: number = 6): Observable<PagedResult<Game>> {
+  getGames(
+    searchTerm?: string,
+    platform?: string,
+    genre?: string,
+    page: number = 1,
+    pageSize: number = 6,
+    era?: string
+  ): Observable<PagedResult<Game>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
@@ -31,6 +38,10 @@ export class GameService {
 
     if (genre?.trim()) {
       params = params.set('genre', genre.trim());
+    }
+
+    if (era?.trim()) {
+      params = params.set('era', era.trim());
     }
 
     return this.http.get<PagedResult<Game>>(this.apiUrl, { params });

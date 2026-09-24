@@ -29,6 +29,7 @@ public class VideoGameApiDriver(HttpClient httpClient)
         string? search = null,
         string? platform = null,
         string? genre = null,
+        string? era = null,
         int? page = null,
         int? pageSize = null)
     {
@@ -39,6 +40,8 @@ public class VideoGameApiDriver(HttpClient httpClient)
             queryParams.Add($"platform={Uri.EscapeDataString(platform)}");
         if (!string.IsNullOrWhiteSpace(genre))
             queryParams.Add($"genre={Uri.EscapeDataString(genre)}");
+        if (!string.IsNullOrWhiteSpace(era))
+            queryParams.Add($"era={Uri.EscapeDataString(era)}");
         if (page.HasValue)
             queryParams.Add($"page={page.Value}");
         if (pageSize.HasValue)

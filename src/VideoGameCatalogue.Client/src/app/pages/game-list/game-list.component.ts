@@ -12,7 +12,7 @@ import {
   NgbDropdownModule
 } from '@ng-bootstrap/ng-bootstrap';
 import { GameService } from '../../core/services/game.service';
-import { Game, PagedResult } from '../../core/models/game.model';
+import { Game, GamingEraInfo, PagedResult } from '../../core/models/game.model';
 
 @Component({
   selector: 'app-game-list',
@@ -47,6 +47,7 @@ export class GameListComponent implements OnInit {
   searchTerm = '';
   selectedPlatform = '';
   selectedGenre = '';
+  selectedEra = '';
 
   readonly page = signal<number>(1);
   readonly pageSize = signal<number>(6);
@@ -63,6 +64,7 @@ export class GameListComponent implements OnInit {
 
   readonly platforms = signal<string[]>([]);
   readonly genres = signal<string[]>([]);
+  readonly eras = signal<GamingEraInfo[]>([]);
 
   constructor() {
     this.setupReactivePipeline();
@@ -97,7 +99,8 @@ export class GameListComponent implements OnInit {
             this.selectedPlatform,
             this.selectedGenre,
             this.page(),
-            this.pageSize()
+            this.pageSize(),
+            this.selectedEra
           ).pipe(
             catchError(() => {
               this.errorMessage.set('Failed to load video games. Ensure the backend API is running.');
@@ -130,6 +133,9 @@ export class GameListComponent implements OnInit {
         next: (meta) => {
           this.platforms.set(meta.platforms);
           this.genres.set(meta.genres);
+          if (meta.eras) {
+            this.eras.set(meta.eras);
+          }
         },
         error: () => {
           // Fallback gracefully
@@ -156,6 +162,7 @@ export class GameListComponent implements OnInit {
     this.searchTerm = '';
     this.selectedPlatform = '';
     this.selectedGenre = '';
+    this.selectedEra = '';
     this.page.set(1);
     this.filterChangeSubject.next();
   }

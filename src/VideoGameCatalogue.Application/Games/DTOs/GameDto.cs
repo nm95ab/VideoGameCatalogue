@@ -14,7 +14,10 @@ public record GameDto(
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
     string? ImageId = null,
-    string? ImageUrl = null)
+    string? ImageUrl = null,
+    EraDto? Era = null,
+    int AgeInYears = 0,
+    string Decade = "")
 {
     public static GameDto FromDomain(VideoGame game, IImageStoragePort? imageStorage = null)
     {
@@ -25,6 +28,18 @@ public record GameDto(
                 ? imageStorage.GetImageUrl(game.ImageId)
                 : $"/api/images/{game.ImageId}";
         }
+
+        var era = game.ReleaseYear.Era;
+        var eraDto = new EraDto(
+            era.Key,
+            era.Generation,
+            era.Name,
+            era.DisplayTitle,
+            era.Icon,
+            era.BadgeClass,
+            era.Description,
+            era.StartYear,
+            era.EndYear);
 
         return new(
             game.Id,
@@ -37,6 +52,9 @@ public record GameDto(
             game.CreatedAtUtc,
             game.UpdatedAtUtc,
             game.ImageId,
-            imageUrl);
+            imageUrl,
+            eraDto,
+            game.ReleaseYear.AgeInYears(),
+            game.ReleaseYear.Decade);
     }
 }

@@ -73,6 +73,27 @@ describe('GameService', () => {
     });
   });
 
+  it('should get games with era query param', () => {
+    service.getGames(undefined, undefined, undefined, 1, 6, '16-bit').subscribe(result => {
+      expect(result.items.length).toBe(1);
+    });
+
+    const req = httpTesting.expectOne(request =>
+      request.url === 'http://localhost:5111/api/games' &&
+      request.params.get('era') === '16-bit'
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      items: mockGames,
+      pageNumber: 1,
+      pageSize: 6,
+      totalCount: 1,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false
+    });
+  });
+
   it('should use default pagination parameters when omitted', () => {
     service.getGames().subscribe(result => {
       expect(result.items.length).toBe(1);

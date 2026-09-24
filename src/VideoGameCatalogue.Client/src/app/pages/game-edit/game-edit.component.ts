@@ -1,11 +1,11 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgbAlertModule, NgbTooltipModule, NgbProgressbarModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { GameService } from '../../core/services/game.service';
-import { CreateGameRequest, UpdateGameRequest } from '../../core/models/game.model';
+import { CreateGameRequest, GamingEraInfo, UpdateGameRequest } from '../../core/models/game.model';
 
 @Component({
   selector: 'app-game-edit',
@@ -47,7 +47,18 @@ export class GameEditComponent implements OnInit {
   readonly platforms = signal<string[]>([]);
   readonly genres = signal<string[]>([]);
   readonly ratings = signal<string[]>([]);
+  readonly eras = signal<GamingEraInfo[]>([]);
   readonly currentYear = new Date().getFullYear();
+  readonly currentReleaseYear = signal<number>(new Date().getFullYear());
+
+  readonly eraInsight = computed(() => {
+    const year = this.currentReleaseYear();
+    if (!year || year < 1950 || year > this.currentYear) return null;
+    const match = this.eras().find(e => year >= e.startYear && (!e.endYear || year <= e.endYear));
+    const ageInYears = this.currentYear - year;
+    const decade = `${Math.floor(year / 10) * 10}s`;
+    return { era: match, ageInYears, decade };
+  });
 
   ngOnInit(): void {
     this.initForm();
@@ -83,6 +94,16 @@ export class GameEditComponent implements OnInit {
       rating: ['', [Validators.required, Validators.maxLength(30)]],
       description: ['', [Validators.maxLength(2000)]]
     });
+
+    this.currentReleaseYear.set(this.currentYear);
+    this.gameForm.get('releaseYear')?.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(val => {
+        const num = Number(val);
+        if (!isNaN(num) && num > 0) {
+          this.currentReleaseYear.set(num);
+        }
+      });
   }
 
   private loadMetadata(): void {
@@ -93,6 +114,9 @@ export class GameEditComponent implements OnInit {
           this.platforms.set(meta.platforms);
           this.genres.set(meta.genres);
           this.ratings.set(meta.ratings);
+          if (meta.eras) {
+            this.eras.set(meta.eras);
+          }
 
           // Pre-select defaults if creating new
           if (!this.isEditMode) {
@@ -127,6 +151,7 @@ export class GameEditComponent implements OnInit {
           rating: game.rating,
           description: game.description
         });
+        this.currentReleaseYear.set(game.releaseYear);
         this.currentImageId.set(game.imageId || null);
         this.isImageRemoved.set(false);
         this.selectedFile = null;

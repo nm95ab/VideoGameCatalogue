@@ -1,3 +1,15 @@
+export interface GamingEraInfo {
+  key: string;
+  generation: string;
+  name: string;
+  displayTitle: string;
+  icon: string;
+  badgeClass: string;
+  description: string;
+  startYear: number;
+  endYear?: number | null;
+}
+
 export interface Game {
   id: string;
   title: string;
@@ -10,6 +22,9 @@ export interface Game {
   imageUrl?: string | null;
   createdAtUtc: string;
   updatedAtUtc?: string | null;
+  era?: GamingEraInfo | null;
+  ageInYears?: number;
+  decade?: string;
 }
 
 export interface CreateGameRequest {
@@ -41,6 +56,7 @@ export interface CatalogueMetadata {
   platforms: string[];
   genres: string[];
   ratings: string[];
+  eras?: GamingEraInfo[];
 }
 
 export interface PagedResult<T> {

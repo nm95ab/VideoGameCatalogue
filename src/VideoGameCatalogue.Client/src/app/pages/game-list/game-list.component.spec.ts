@@ -39,7 +39,22 @@ describe('GameListComponent', () => {
   beforeEach(async () => {
     mockGameService = {
       getGames: vi.fn().mockReturnValue(of(samplePagedResult)),
-      getMetadata: vi.fn().mockReturnValue(of({ platforms: ['SNES'], genres: ['Platformer'], ratings: ['Everyone'] })),
+      getMetadata: vi.fn().mockReturnValue(of({
+        platforms: ['SNES'],
+        genres: ['Platformer'],
+        ratings: ['Everyone'],
+        eras: [{
+          key: '16-bit',
+          generation: '4th Gen',
+          name: '16-Bit Era',
+          displayTitle: '4th Gen: 16-Bit Era',
+          icon: '🎮',
+          badgeClass: 'bg-primary-subtle',
+          description: 'SNES / Genesis',
+          startYear: 1987,
+          endYear: 1993
+        }]
+      })),
       getImageUrl: vi.fn((id: string, directUrl?: string | null) => directUrl || `http://localhost:5111/api/images/${id}`)
     };
 
@@ -67,27 +82,37 @@ describe('GameListComponent', () => {
     expect(component.totalCount()).toBe(1);
     expect(component.totalPages()).toBe(1);
     expect(component.isLoading()).toBe(false);
+    expect(component.eras().length).toBe(1);
   });
 
   it('should filter games when search term changes', () => {
     fixture.detectChanges();
     component.searchTerm = 'Mario';
     component.onFilterChange();
-    expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '', 1, 6);
+    expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '', 1, 6, '');
   });
 
-  it('should reset filters', () => {
+  it('should filter games by era', () => {
+    fixture.detectChanges();
+    component.selectedEra = '16-bit';
+    component.onFilterChange();
+    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 1, 6, '16-bit');
+  });
+
+  it('should reset filters including era', () => {
     fixture.detectChanges();
     component.searchTerm = 'Mario';
     component.selectedPlatform = 'SNES';
     component.selectedGenre = 'Platformer';
+    component.selectedEra = '16-bit';
 
     component.resetFilters();
 
     expect(component.searchTerm).toBe('');
     expect(component.selectedPlatform).toBe('');
     expect(component.selectedGenre).toBe('');
-    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 1, 6);
+    expect(component.selectedEra).toBe('');
+    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 1, 6, '');
   });
 
   it('should navigate to add page', () => {
@@ -118,7 +143,7 @@ describe('GameListComponent', () => {
 
       vi.advanceTimersByTime(1);
       expect(mockGameService.getGames).toHaveBeenCalledTimes(1);
-      expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '', 1, 6);
+      expect(mockGameService.getGames).toHaveBeenCalledWith('Mario', '', '', 1, 6, '');
     } finally {
       vi.useRealTimers();
     }
@@ -188,7 +213,7 @@ describe('GameListComponent', () => {
     component.onPageChange(2);
 
     expect(component.page()).toBe(2);
-    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 2, 6);
+    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 2, 6, '');
   });
 
   it('should reset page to 1 when search or filters change', () => {
@@ -215,7 +240,7 @@ describe('GameListComponent', () => {
 
     expect(component.pageSize()).toBe(12);
     expect(component.page()).toBe(1);
-    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 1, 12);
+    expect(mockGameService.getGames).toHaveBeenCalledWith('', '', '', 1, 12, '');
   });
 
   it('should compute startItemIndex and endItemIndex correctly', () => {

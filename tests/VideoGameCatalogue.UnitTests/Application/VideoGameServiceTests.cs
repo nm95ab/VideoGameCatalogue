@@ -41,11 +41,16 @@ public class VideoGameServiceTests
             CreateSampleGame("Super Mario World", 1990),
             CreateSampleGame("Chrono Trigger", 1995)
         };
-        _repository.GetAllAsync(Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _repository.GetAllAsync(
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>())
             .Returns(games);
 
         // Act
-        var result = await _service.GetAllGamesAsync(null, null, null, CancellationToken.None);
+        var result = await _service.GetAllGamesAsync(cancellationToken: CancellationToken.None);
 
         // Assert
         result.Should().HaveCount(2);
@@ -66,12 +71,13 @@ public class VideoGameServiceTests
             Arg.Any<string?>(),
             Arg.Any<string?>(),
             Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<int>(),
             Arg.Any<int>(),
             Arg.Any<CancellationToken>()).Returns(pagedResult);
 
         // Act
-        var result = await _service.GetGamesAsync(null, null, null, 1, 10, CancellationToken.None);
+        var result = await _service.GetGamesAsync(pageNumber: 1, pageSize: 10, cancellationToken: CancellationToken.None);
 
         // Assert
         result.TotalCount.Should().Be(2);
