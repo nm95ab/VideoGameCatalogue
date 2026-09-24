@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using VideoGameCatalogue.Domain.Games;
 using VideoGameCatalogue.Domain.Games.ValueObjects;
@@ -10,17 +9,13 @@ namespace VideoGameCatalogue.UnitTests.Infrastructure;
 
 public sealed class EfCoreVideoGameRepositoryTests : IDisposable
 {
-    private readonly SqliteConnection _connection;
     private readonly VideoGameCatalogueDbContext _context;
     private readonly EfCoreVideoGameRepository _repository;
 
     public EfCoreVideoGameRepositoryTests()
     {
-        _connection = new SqliteConnection("DataSource=:memory:");
-        _connection.Open();
-
         var options = new DbContextOptionsBuilder<VideoGameCatalogueDbContext>()
-            .UseSqlite(_connection)
+            .UseInMemoryDatabase(databaseName: $"TestDb_{Guid.NewGuid()}")
             .Options;
 
         _context = new VideoGameCatalogueDbContext(options);
@@ -30,7 +25,7 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task GetAllAsync_WithSearchTerm_TranslatesAndFiltersSuccessfullyOnRelationalProvider()
+    public async Task GetAllAsync_WithSearchTerm_FiltersByTitleOrDescription()
     {
         // Arrange
         var game1 = VideoGame.Create(
@@ -61,7 +56,7 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task GetAllAsync_WithPlatformAndGenre_TranslatesAndFiltersSuccessfullyOnRelationalProvider()
+    public async Task GetAllAsync_WithPlatformAndGenre_FiltersCorrectly()
     {
         // Arrange
         var game = VideoGame.Create(
@@ -83,7 +78,7 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldOrderByTitleOnRelationalProvider()
+    public async Task GetAllAsync_ShouldOrderByTitle()
     {
         // Arrange
         var gameB = VideoGame.Create(
@@ -179,6 +174,5 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
     public void Dispose()
     {
         _context.Dispose();
-        _connection.Dispose();
     }
 }
