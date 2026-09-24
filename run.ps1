@@ -35,29 +35,48 @@ Write-Host "  ✔ npm found: $npmVer" -ForegroundColor Green
 Write-Host "`n[2/5] Checking Database Environment..." -ForegroundColor White
 $useInMemory = $false
 
-$dockerAvailable = (Get-Command docker -ErrorAction SilentlyContinue) -and (docker info 2>&1 | Out-Null; $LASTEXITCODE -eq 0)
-if ($dockerAvailable) {
-    Write-Host "  ✔ Docker is running. Ensuring SQL Server container is up..." -ForegroundColor Green
-    docker compose up -d sqlserver 2>$null
-    
-    Write-Host -NoNewline "  Waiting for SQL Server to accept connections on port 1433..."
-    for ($i = 1; $i -le 20; $i++) {
-        $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
-        if ($tcp.TcpTestSucceeded) {
-            Write-Host " Ready!" -ForegroundColor Green
-            break
-        }
-        Start-Sleep -Seconds 1
-        Write-Host -NoNewline "."
-        if ($i -eq 20) {
-            Write-Host "`n  ⚠ SQL Server timed out. Falling back to In-Memory database." -ForegroundColor Yellow
-            $useInMemory = $true
-        }
+$alreadyListening = $false
+try {
+    $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
+    if ($tcp.TcpTestSucceeded) {
+        $alreadyListening = $true
     }
+} catch { }
+
+if ($alreadyListening) {
+    Write-Host "  ✔ SQL Server is already listening on port 1433." -ForegroundColor Green
 } else {
-    Write-Host "  ⚠ Docker is not running or not installed." -ForegroundColor Yellow
-    Write-Host "    Falling back to EF Core In-Memory database for zero-dependency local run!" -ForegroundColor Yellow
-    $useInMemory = $true
+    $dockerAvailable = (Get-Command docker -ErrorAction SilentlyContinue) -and (docker info 2>&1 | Out-Null; $LASTEXITCODE -eq 0)
+    if ($dockerAvailable) {
+        Write-Host "  ✔ Docker is running. Ensuring SQL Server container is up..." -ForegroundColor Green
+        try {
+            $containers = docker ps -a --format '{{.Names}}' 2>$null
+            if ($containers -match "videogamecatalogue-sqlserver") {
+                docker start videogamecatalogue-sqlserver 2>$null | Out-Null
+            } else {
+                docker compose up -d sqlserver 2>$null | Out-Null
+            }
+        } catch { }
+        
+        Write-Host -NoNewline "  Waiting for SQL Server on port 1433..."
+        for ($i = 1; $i -le 15; $i++) {
+            $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
+            if ($tcp.TcpTestSucceeded) {
+                Write-Host " Ready!" -ForegroundColor Green
+                break
+            }
+            Start-Sleep -Seconds 1
+            Write-Host -NoNewline "."
+            if ($i -eq 15) {
+                Write-Host "`n  ⚠ SQL Server timed out. Falling back to In-Memory database." -ForegroundColor Yellow
+                $useInMemory = $true
+            }
+        }
+    } else {
+        Write-Host "  ⚠ Docker is not running or not installed." -ForegroundColor Yellow
+        Write-Host "    Falling back to EF Core In-Memory database for zero-dependency local run!" -ForegroundColor Yellow
+        $useInMemory = $true
+    }
 }
 
 # 3. Dependency Verification & Installation

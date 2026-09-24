@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -eo pipefail
 
 # ANSI color codes for clean terminal output
 BOLD='\033[1m'
@@ -8,6 +7,21 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+is_port_open() {
+    local host=$1
+    local port=$2
+    if command -v nc >/dev/null 2>&1; then
+        nc -z -w 1 "$host" "$port" >/dev/null 2>&1
+        return $?
+    elif command -v curl >/dev/null 2>&1; then
+        curl -s --connect-timeout 1 "telnet://$host:$port" >/dev/null 2>&1
+        return $?
+    else
+        (exec 3<>/dev/tcp/"$host"/"$port") 2>/dev/null && exec 3>&-
+        return $?
+    fi
+}
 
 echo -e "${BOLD}${BLUE}====================================================${NC}"
 echo -e "${BOLD}${BLUE}   Video Game Catalogue — Developer Quickstart      ${NC}"
@@ -43,27 +57,40 @@ echo -e "  ${GREEN}✔${NC} npm found: ${BOLD}$NPM_VER${NC}"
 echo -e "\n${BOLD}[2/5] Checking Database Environment...${NC}"
 USE_IN_MEMORY=false
 
-if command -v docker &> /dev/null && docker info &> /dev/null; then
-    echo -e "  ${GREEN}✔${NC} Docker is running. Ensuring SQL Server container is up..."
-    docker compose up -d sqlserver 2>/dev/null || docker-compose up -d sqlserver 2>/dev/null
-    
-    echo -n "  Waiting for SQL Server to accept connections on port 1433..."
-    for i in {1..20}; do
-        if nc -z 127.0.0.1 1433 2>/dev/null || (echo > /dev/tcp/127.0.0.1/1433) 2>/dev/null; then
-            echo -e " ${GREEN}Ready!${NC}"
-            break
-        fi
-        sleep 1
-        echo -n "."
-        if [ "$i" -eq 20 ]; then
-            echo -e "\n  ${YELLOW}⚠ SQL Server connection timed out. Falling back to In-Memory database.${NC}"
-            USE_IN_MEMORY=true
-        fi
-    done
+if is_port_open 127.0.0.1 1433; then
+    echo -e "  ${GREEN}✔${NC} SQL Server is already listening on port 1433."
 else
-    echo -e "  ${YELLOW}⚠ Docker is not running or not installed.${NC}"
-    echo -e "  ${YELLOW}  Falling back to EF Core In-Memory database for zero-dependency local run!${NC}"
-    USE_IN_MEMORY=true
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+        echo -e "  Attempting to start SQL Server container via Docker..."
+        
+        # If an existing container exists, start it
+        if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "videogamecatalogue-sqlserver"; then
+            docker start videogamecatalogue-sqlserver >/dev/null 2>&1 || true
+        elif command -v docker-compose >/dev/null 2>&1; then
+            docker-compose up -d sqlserver >/dev/null 2>&1 || true
+        else
+            docker compose up -d sqlserver >/dev/null 2>&1 || true
+        fi
+
+        # Wait for port 1433
+        echo -n "  Waiting for SQL Server on port 1433..."
+        for i in {1..15}; do
+            if is_port_open 127.0.0.1 1433; then
+                echo -e " ${GREEN}Ready!${NC}"
+                break
+            fi
+            sleep 1
+            echo -n "."
+            if [ "$i" -eq 15 ]; then
+                echo -e "\n  ${YELLOW}⚠ SQL Server connection timed out. Falling back to In-Memory database.${NC}"
+                USE_IN_MEMORY=true
+            fi
+        done
+    else
+        echo -e "  ${YELLOW}⚠ Docker is not running or not installed.${NC}"
+        echo -e "  ${YELLOW}  Falling back to EF Core In-Memory database for zero-dependency local run!${NC}"
+        USE_IN_MEMORY=true
+    fi
 fi
 
 # 3. Dependency Verification & Installation
@@ -75,13 +102,9 @@ else
     echo -e "  ${GREEN}✔${NC} Frontend dependencies present."
 fi
 
-echo -e "  📦 Restoring .NET NuGet packages..."
-dotnet restore > /dev/null
-echo -e "  ${GREEN}✔${NC} Backend dependencies restored."
-
 # 4. Compilation & Verification
 echo -e "\n${BOLD}[4/5] Compiling Solution...${NC}"
-dotnet build --warnaserror --no-restore > /dev/null
+dotnet build --warnaserror > /dev/null
 echo -e "  ${GREEN}✔${NC} Build succeeded with zero warnings."
 
 # 5. Launch Backend & Frontend
@@ -108,7 +131,7 @@ cleanup() {
     exit 0
 }
 
-trap cleanup SIGINT SIGTERM EXIT
+trap cleanup SIGINT SIGTERM
 
 echo -e "\n  Waiting for services to become responsive..."
 for i in {1..30}; do
