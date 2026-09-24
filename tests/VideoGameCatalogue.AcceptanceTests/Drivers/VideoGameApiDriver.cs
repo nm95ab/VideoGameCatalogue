@@ -31,7 +31,7 @@ public class VideoGameApiDriver(HttpClient httpClient)
         string? genre = null,
         string? era = null,
         int? page = null,
-        int? pageSize = null)
+        int? pageSize = 100)
     {
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(search))

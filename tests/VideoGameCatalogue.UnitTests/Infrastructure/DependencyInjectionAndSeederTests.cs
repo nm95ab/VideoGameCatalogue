@@ -108,10 +108,10 @@ public sealed class DependencyInjectionAndSeederTests
         // Act 1: Initial seed on empty database
         await DatabaseSeeder.SeedAsync(context);
         var countAfterFirstSeed = await context.VideoGames.CountAsync();
-        countAfterFirstSeed.Should().Be(8);
+        countAfterFirstSeed.Should().Be(104);
 
         var platformCount = await context.Platforms.CountAsync();
-        platformCount.Should().Be(10);
+        platformCount.Should().Be(22);
         var genreCount = await context.Genres.CountAsync();
         genreCount.Should().Be(12);
         var ratingCount = await context.Ratings.CountAsync();
@@ -120,8 +120,8 @@ public sealed class DependencyInjectionAndSeederTests
         // Act 2: Second run should skip seeding without duplicate key violations
         await DatabaseSeeder.SeedAsync(context);
         var countAfterSecondSeed = await context.VideoGames.CountAsync();
-        countAfterSecondSeed.Should().Be(8);
-        (await context.Platforms.CountAsync()).Should().Be(10);
+        countAfterSecondSeed.Should().Be(104);
+        (await context.Platforms.CountAsync()).Should().Be(22);
         (await context.Genres.CountAsync()).Should().Be(12);
         (await context.Ratings.CountAsync()).Should().Be(6);
 
