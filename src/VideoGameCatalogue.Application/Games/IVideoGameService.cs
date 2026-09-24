@@ -3,6 +3,14 @@ using VideoGameCatalogue.Domain.Common;
 
 namespace VideoGameCatalogue.Application.Games;
 
+/// <summary>
+/// Inbound (Driving) Port defining the application use cases for the Video Game Catalogue.
+/// <para>
+/// Acts as the boundary interface between Driving Adapters (ASP.NET Minimal APIs, CLI, or test runners)
+/// and the Application Core. It accepts application DTOs/primitives, coordinates domain logic, and returns
+/// Railway-Oriented <see cref="Result{TValue}"/> results to the caller.
+/// </para>
+/// </summary>
 public interface IVideoGameService
 {
     Task<IReadOnlyList<GameDto>> GetAllGamesAsync(

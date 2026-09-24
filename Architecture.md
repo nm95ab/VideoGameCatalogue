@@ -159,7 +159,7 @@ public class VideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
 #### Why This Is Superior:
 1. **Native SQL Translation**: EF Core treats `.Value` as a mapped column (`[Title]`, `[Platform]`), compiling `g.Title.Value.Contains(search)` directly to T-SQL `[v].[Title] LIKE @search`.
 2. **Zero Type Casts**: Eliminates hacky `((string)(object)g.Title)` double-casting.
-3. **Provider Agnostic**: The identical LINQ query executes seamlessly on SQL Server, InMemory, and SQLite without conditional `isRelational` branching.
+3. **Provider Agnostic**: The identical LINQ query executes seamlessly on both SQL Server and In-Memory without conditional `isRelational` branching.
 
 ### 5.2 Clean Repository Implementation (`EfCoreVideoGameRepository`)
 Queries are concise, linear, and satisfy the cyclomatic complexity limit (<= 10):

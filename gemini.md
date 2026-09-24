@@ -151,7 +151,7 @@ The solution architecture synthesizes **Clean Architecture**, **Onion Architectu
   - **Driven (Outbound) Ports**: Define external services the core requires (e.g., `IVideoGameRepository`, `IExternalGameMetadataPort`, `IClockPort`).
 - **Adapters (Implementations residing in Outer Layers)**:
   - **Driving (Inbound) Adapters**: Translate external protocols into Core port calls (e.g., ASP.NET Core Endpoints, CLI handlers).
-  - **Driven (Outbound) Adapters**: Translate core port calls to external protocols (e.g., `EfCoreVideoGameRepository`, `IgdbApiAdapter`, `SqliteConnectionFactory`).
+  - **Driven (Outbound) Adapters**: Translate core port calls to external protocols (e.g., `EfCoreVideoGameRepository`, `IgdbApiAdapter`, `SqlServerConnectionFactory`).
 
 ### 4.3 Domain-Driven Design (DDD) Tactical Patterns
 1. **Entities & Aggregate Roots**:
@@ -185,7 +185,7 @@ The solution architecture synthesizes **Clean Architecture**, **Onion Architectu
 
 ### 6.3 The Testing Pyramid
 - **Unit Tests (70–80%)**: Domain entities, Value Objects, Domain Services, and Application handlers. Zero I/O, fast, sub-second execution.
-- **Integration Tests (15–20%)**: Test EF Core repositories against real database engines (Testcontainers / SQLite in-memory).
+- **Integration Tests (15–20%)**: Test EF Core repositories against real database engines (Testcontainers / In-Memory database).
 - **End-to-End / API Tests (5–10%)**: Full HTTP request-response cycles with `WebApplicationFactory<Program>`.
 
 ### 6.4 Test Standards & Conventions

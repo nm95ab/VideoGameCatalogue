@@ -2,6 +2,14 @@ using VideoGameCatalogue.Domain.Games;
 
 namespace VideoGameCatalogue.Domain.Ports;
 
+/// <summary>
+/// Outbound (Driven) Port interface for <see cref="VideoGame"/> persistence.
+/// <para>
+/// In Hexagonal (Ports &amp; Adapters) Architecture, this port is owned by the Core Domain/Application layer.
+/// It defines the contract for persisting and retrieving Aggregate Roots without coupling the core
+/// to any specific database technology or ORM (e.g. EF Core, SQL Server).
+/// </para>
+/// </summary>
 public interface IVideoGameRepository
 {
     Task<IReadOnlyList<VideoGame>> GetAllAsync(

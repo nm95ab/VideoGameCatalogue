@@ -2,6 +2,16 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace VideoGameCatalogue.Domain.Common;
 
+/// <summary>
+/// Represents the outcome of an operation following Railway-Oriented Programming (ROP).
+/// <para>
+/// Rationale:
+/// Traditional exception handling (<c>throw new Exception()</c>) creates hidden control flow,
+/// introduces heavy CLR stack-unwinding performance penalties, and obscures domain error paths.
+/// The Result pattern transforms expected domain and validation failures into first-class return types,
+/// forcing callers to explicitly handle success and failure paths.
+/// </para>
+/// </summary>
 public class Result
 {
     public bool IsSuccess { get; }
@@ -24,6 +34,10 @@ public class Result
     public static Result Failure(Error error) => new(false, error);
 }
 
+/// <summary>
+/// Generic variant of <see cref="Result"/> carrying a strongly typed payload on success.
+/// Accessing <see cref="Value"/> when <see cref="Result.IsFailure"/> throws to prevent consuming uninitialized state.
+/// </summary>
 public class Result<TValue> : Result
 {
     private readonly TValue? _value;

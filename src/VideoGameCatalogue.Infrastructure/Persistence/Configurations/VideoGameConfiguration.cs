@@ -5,6 +5,16 @@ using VideoGameCatalogue.Domain.Games.ValueObjects;
 
 namespace VideoGameCatalogue.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Entity Framework Core relational mapping configuration for the <see cref="VideoGame"/> Aggregate Root.
+/// <para>
+/// Architectural Design Note:
+/// Domain Value Objects (Title, Platform, Genre, ReleaseYear, Rating) are mapped as EF Core Complex Types
+/// using <c>ComplexProperty</c> rather than legacy <c>HasConversion</c> Value Converters.
+/// This registers the inner <c>.Value</c> as a first-class mapped column in EF Core's relational expression
+/// tree, allowing LINQ queries like <c>g.Title.Value.Contains(search)</c> and <c>OrderBy(g => g.Title.Value)</c>
+/// </para>
+/// </summary>
 public class VideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
 {
     public void Configure(EntityTypeBuilder<VideoGame> builder)
@@ -13,6 +23,7 @@ public class VideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
 
         builder.HasKey(x => x.Id);
 
+        // Map GameTitle Value Object as a Complex Type to column [Title]
         builder.ComplexProperty(x => x.Title, b =>
         {
             b.Property(p => p.Value)

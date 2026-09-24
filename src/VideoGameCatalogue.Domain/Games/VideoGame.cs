@@ -3,6 +3,16 @@ using VideoGameCatalogue.Domain.Games.ValueObjects;
 
 namespace VideoGameCatalogue.Domain.Games;
 
+/// <summary>
+/// Aggregate Root representing a Video Game in the catalogue.
+/// <para>
+/// Domain-Driven Design (DDD) Invariants:
+/// - Encapsulates all state mutations: properties have private setters to prevent external corruption.
+/// - Guarantees valid state at all times: instances can only be created or modified via domain factory/methods
+///   (<see cref="Create(Guid, GameTitle, Platform, Genre, ReleaseYear, Rating, string?)"/> and <see cref="UpdateDetails"/>).
+/// - Uses strongly typed Value Objects (<see cref="GameTitle"/>, <see cref="Platform"/>, etc.) to eliminate Primitive Obsession.
+/// </para>
+/// </summary>
 public class VideoGame
 {
     public Guid Id { get; private set; }
@@ -15,7 +25,10 @@ public class VideoGame
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
 
-    // Required for EF Core reflection
+    /// <summary>
+    /// Parameterless constructor required by EF Core reflection for entity materialization.
+    /// Kept private to prevent instantiation outside of domain factory methods.
+    /// </summary>
     private VideoGame()
     {
     }
@@ -40,6 +53,9 @@ public class VideoGame
         CreatedAtUtc = createdAtUtc;
     }
 
+    /// <summary>
+    /// Factory method to create a new <see cref="VideoGame"/> with a generated identity.
+    /// </summary>
     public static Result<VideoGame> Create(
         GameTitle title,
         Platform platform,
@@ -51,6 +67,11 @@ public class VideoGame
         return Create(Guid.NewGuid(), title, platform, genre, releaseYear, rating, description);
     }
 
+    /// <summary>
+    /// Factory method to reconstitute or create a <see cref="VideoGame"/> with an explicit identity.
+    /// Enforces defensive invariants (e.g. non-empty ID) and returns a Railway-Oriented <see cref="Result{VideoGame}"/>
+    /// to avoid throwing exceptions for validation failures.
+    /// </summary>
     public static Result<VideoGame> Create(
         Guid id,
         GameTitle title,
@@ -76,6 +97,9 @@ public class VideoGame
         return Result<VideoGame>.Success(game);
     }
 
+    /// <summary>
+    /// Updates game details while preserving domain invariants and recording the update timestamp in UTC.
+    /// </summary>
     public Result UpdateDetails(
         GameTitle title,
         Platform platform,

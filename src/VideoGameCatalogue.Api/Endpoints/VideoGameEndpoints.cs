@@ -6,6 +6,13 @@ using VideoGameCatalogue.Domain.Common;
 
 namespace VideoGameCatalogue.Api.Endpoints;
 
+/// <summary>
+/// Inbound (Driving) Adapter exposing RESTful HTTP endpoints for video game catalogue management.
+/// <para>
+/// Translates incoming HTTP requests and route/query parameters to the <see cref="IVideoGameService"/>
+/// driving port, and maps application results to RFC 7807 ProblemDetails or HTTP 200/201/204 responses.
+/// </para>
+/// </summary>
 public static class VideoGameEndpoints
 {
     public static IEndpointRouteBuilder MapVideoGameEndpoints(this IEndpointRouteBuilder app)
@@ -89,6 +96,10 @@ public static class VideoGameEndpoints
         return TypedResults.NoContent();
     }
 
+    /// <summary>
+    /// Translates Domain <see cref="Error"/> objects into RFC 7807 compliant <see cref="ProblemDetails"/> HTTP responses.
+    /// Maps "NotFound" error codes to HTTP 404, and validation/invariants failures to HTTP 400 with machine-readable extensions.
+    /// </summary>
     private static IResult ToProblemResult(Error error)
     {
         if (error.Code.EndsWith(".NotFound", StringComparison.OrdinalIgnoreCase))

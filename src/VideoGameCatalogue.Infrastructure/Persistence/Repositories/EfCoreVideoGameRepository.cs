@@ -4,8 +4,22 @@ using VideoGameCatalogue.Domain.Ports;
 
 namespace VideoGameCatalogue.Infrastructure.Persistence.Repositories;
 
+/// <summary>
+/// Outbound (Driven) Adapter implementing <see cref="IVideoGameRepository"/> with Entity Framework Core.
+/// <para>
+/// Persists and queries <see cref="VideoGame"/> Aggregate Roots against Microsoft SQL Server
+/// (or In-Memory during testing) via <see cref="VideoGameCatalogueDbContext"/>.
+/// </para>
+/// </summary>
 public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IVideoGameRepository
 {
+    /// <summary>
+    /// Retrieves all matching video games based on optional search term, platform, and genre filters.
+    /// <para>
+    /// Uses <c>AsNoTracking()</c> to bypass EF Core Change Tracker snapshotting, minimizing heap allocations
+    /// and maximizing query throughput for read-only catalogue browsing.
+    /// </para>
+    /// </summary>
     public async Task<IReadOnlyList<VideoGame>> GetAllAsync(
         string? searchTerm = null,
         string? platform = null,

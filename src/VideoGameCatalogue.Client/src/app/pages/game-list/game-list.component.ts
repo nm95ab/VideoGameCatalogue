@@ -46,6 +46,16 @@ export class GameListComponent implements OnInit {
     this.loadGames();
   }
 
+  /**
+   * Configures the unified reactive query pipeline for searching and filtering games.
+   *
+   * Design Decisions & Architectural Highlights:
+   * 1. Debounced Search: Throttles rapid keystrokes (`debounceTime(300)`) and ignores duplicate values (`distinctUntilChanged`).
+   * 2. Immediate Filters: Dropdown selections (Platform/Genre) trigger immediate fetches without artificial delay.
+   * 3. SwitchMap Cancellation: Automatically cancels pending in-flight HTTP requests when new filter/search criteria arrive,
+   *    guaranteeing that slow, stale responses never overwrite newer search results (prevents out-of-order race conditions).
+   * 4. Automatic Teardown: Uses `takeUntilDestroyed(this.destroyRef)` to eliminate memory leaks upon component destruction.
+   */
   private setupReactivePipeline(): void {
     const debouncedSearch$ = this.searchSubject.pipe(
       debounceTime(300),

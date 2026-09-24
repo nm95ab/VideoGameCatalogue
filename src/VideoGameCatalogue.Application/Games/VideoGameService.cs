@@ -6,6 +6,16 @@ using VideoGameCatalogue.Domain.Ports;
 
 namespace VideoGameCatalogue.Application.Games;
 
+/// <summary>
+/// Application Service implementing the <see cref="IVideoGameService"/> Inbound Port.
+/// <para>
+/// Orchestrates application use cases by:
+/// 1. Validating incoming DTO primitive inputs into strongly typed Domain Value Objects.
+/// 2. Invoking Aggregate Root business methods on <see cref="VideoGame"/>.
+/// 3. Delegating persistence to the outbound <see cref="IVideoGameRepository"/> port.
+/// 4. Projecting domain entities into presentation-agnostic <see cref="GameDto"/> records.
+/// </para>
+/// </summary>
 public class VideoGameService(IVideoGameRepository repository) : IVideoGameService
 {
     private static readonly string[] PredefinedPlatforms =
@@ -130,6 +140,14 @@ public class VideoGameService(IVideoGameRepository repository) : IVideoGameServi
         PredefinedGenres,
         PredefinedRatings);
 
+    /// <summary>
+    /// Validates and parses raw DTO primitives into domain Value Objects.
+    /// <para>
+    /// Acts as a fail-fast anti-corruption boundary: if any primitive input violates domain invariants
+    /// (e.g. empty title, year out of range), evaluation halts and returns an immediate <see cref="Result.Failure(Error)"/>,
+    /// preventing invalid arguments from reaching the domain model.
+    /// </para>
+    /// </summary>
     private static Result<(GameTitle Title, Platform Platform, Genre Genre, ReleaseYear Year, Rating Rating)> ParseValueObjects(
         string? rawTitle,
         string? rawPlatform,
