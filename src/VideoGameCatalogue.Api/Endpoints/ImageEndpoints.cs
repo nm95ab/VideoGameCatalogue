@@ -6,7 +6,12 @@ using VideoGameCatalogue.Domain.Common;
 namespace VideoGameCatalogue.Api.Endpoints;
 
 /// <summary>
-/// Inbound (Driving) Adapter exposing RESTful endpoints for image upload, retrieval, and deletion.
+/// Inbound (Driving) Adapter exposing RESTful endpoints for image upload and deletion.
+/// <para>
+/// Note: Image retrieval is served directly via kernel-level zero-copy static file middleware
+/// (<c>app.UseStaticFiles()</c>) in local development, or via direct CDN/Blob URLs in cloud deployments,
+/// eliminating reverse-proxy overhead and thread pool saturation on the API server.
+/// </para>
 /// </summary>
 public static class ImageEndpoints
 {
@@ -21,7 +26,10 @@ public static class ImageEndpoints
             .DisableAntiforgery()
             .RequireRateLimiting("UploadsPolicy");
 
-        group.MapGet("/{imageId}", GetImage);
+        // Existing images are served by UseStaticFiles() earlier in the middleware pipeline.
+        // If an image is missing or deleted, requests fall through to this endpoint returning 404 Not Found.
+        group.MapGet("/{imageId}", () => TypedResults.NotFound());
+
         group.MapDelete("/{imageId}", DeleteImage);
 
         return app;
@@ -50,22 +58,6 @@ public static class ImageEndpoints
         }
 
         return TypedResults.Created(result.Value.Url, result.Value);
-    }
-
-    private static async Task<IResult> GetImage(
-        [FromServices] IImageManagementService service,
-        [FromRoute] string imageId,
-        HttpContext httpContext,
-        CancellationToken ct)
-    {
-        var result = await service.GetImageAsync(imageId, ct);
-        if (result.IsFailure)
-        {
-            return ToProblemResult(result.Error);
-        }
-
-        httpContext.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
-        return TypedResults.Stream(result.Value.Stream, result.Value.ContentType);
     }
 
     private static async Task<IResult> DeleteImage(

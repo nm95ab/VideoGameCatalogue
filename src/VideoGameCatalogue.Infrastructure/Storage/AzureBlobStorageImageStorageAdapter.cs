@@ -51,21 +51,6 @@ public class AzureBlobStorageImageStorageAdapter : IImageStoragePort
         return imageId;
     }
 
-    public async Task<ImageFileResult?> GetImageAsync(string imageId, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(imageId))
-            return null;
-
-        var blobClient = _containerClient.GetBlobClient(imageId);
-        if (!await blobClient.ExistsAsync(cancellationToken))
-            return null;
-
-        var downloadResult = await blobClient.DownloadStreamingAsync(cancellationToken: cancellationToken);
-        var contentType = downloadResult.Value.Details.ContentType ?? "application/octet-stream";
-
-        return new ImageFileResult(downloadResult.Value.Content, contentType, imageId);
-    }
-
     public async Task<bool> DeleteImageAsync(string imageId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(imageId))

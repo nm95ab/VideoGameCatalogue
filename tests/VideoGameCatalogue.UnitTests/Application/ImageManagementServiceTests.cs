@@ -103,51 +103,6 @@ public class ImageManagementServiceTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task GetImageAsync_WhenIdIsInvalid_ShouldReturnInvalidIdFailure(string invalidId)
-    {
-        // Act
-        var result = await _service.GetImageAsync(invalidId);
-
-        // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Image.InvalidId");
-    }
-
-    [Fact]
-    public async Task GetImageAsync_WhenNotFound_ShouldReturnNotFoundFailure()
-    {
-        // Arrange
-        _storage.GetImageAsync("missing.webp", Arg.Any<CancellationToken>())
-            .Returns((ImageFileResult?)null);
-
-        // Act
-        var result = await _service.GetImageAsync("missing.webp");
-
-        // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Image.NotFound");
-    }
-
-    [Fact]
-    public async Task GetImageAsync_WhenFound_ShouldReturnImageFileResult()
-    {
-        // Arrange
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("image-bytes"));
-        var fileResult = new ImageFileResult(stream, "image/webp", "found.webp");
-        _storage.GetImageAsync("found.webp", Arg.Any<CancellationToken>())
-            .Returns(fileResult);
-
-        // Act
-        var result = await _service.GetImageAsync("found.webp");
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.ContentType.Should().Be("image/webp");
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
     public async Task DeleteImageAsync_WhenIdIsInvalid_ShouldReturnInvalidIdFailure(string invalidId)
     {
         // Act

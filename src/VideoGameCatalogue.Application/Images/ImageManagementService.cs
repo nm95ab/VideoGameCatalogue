@@ -40,20 +40,6 @@ public class ImageManagementService(
         }
     }
 
-    public async Task<Result<ImageFileResult>> GetImageAsync(
-        string imageId,
-        CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(imageId))
-            return Result<ImageFileResult>.Failure(Error.Validation("Image.InvalidId", "The image ID cannot be empty."));
-
-        var image = await storagePort.GetImageAsync(imageId, cancellationToken);
-        if (image is null)
-            return Result<ImageFileResult>.Failure(Error.NotFound("Image.NotFound", $"Image '{imageId}' was not found."));
-
-        return Result<ImageFileResult>.Success(image.Value);
-    }
-
     public async Task<Result> DeleteImageAsync(
         string imageId,
         CancellationToken cancellationToken = default)

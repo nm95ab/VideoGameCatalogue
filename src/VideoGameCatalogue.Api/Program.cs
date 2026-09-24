@@ -77,6 +77,8 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
+app.UseRouting();
+
 // 6. Dynamic API rate limiting (applies only to dynamic API endpoints)
 app.UseRateLimiter();
 

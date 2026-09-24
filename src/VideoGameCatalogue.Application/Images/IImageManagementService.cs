@@ -1,5 +1,4 @@
 using VideoGameCatalogue.Domain.Common;
-using VideoGameCatalogue.Domain.Ports;
 
 namespace VideoGameCatalogue.Application.Images;
 
@@ -16,13 +15,6 @@ public interface IImageManagementService
         Stream inputStream,
         string fileName,
         string contentType,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Retrieves the stored image file stream and metadata.
-    /// </summary>
-    Task<Result<ImageFileResult>> GetImageAsync(
-        string imageId,
         CancellationToken cancellationToken = default);
 
     /// <summary>

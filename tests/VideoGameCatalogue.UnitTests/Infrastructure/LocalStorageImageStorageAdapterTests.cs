@@ -40,38 +40,6 @@ public sealed class LocalStorageImageStorageAdapterTests : IDisposable
     }
 
     [Fact]
-    public async Task GetImageAsync_WhenFileExists_ReturnsStreamAndContentType()
-    {
-        // Arrange
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("sample-image-data"));
-        var imageId = await _adapter.SaveImageAsync(stream, "image/webp", ".webp");
-
-        // Act
-        var result = await _adapter.GetImageAsync(imageId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Value.ContentType.Should().Be("image/webp");
-        using var reader = new StreamReader(result.Value.Stream);
-        var content = await reader.ReadToEndAsync();
-        content.Should().Be("sample-image-data");
-    }
-
-    [Theory]
-    [InlineData("../secret.txt")]
-    [InlineData("..\\secret.txt")]
-    [InlineData("/etc/passwd")]
-    [InlineData("")]
-    public async Task GetImageAsync_WhenPathUnsafeOrMissing_ReturnsNull(string invalidId)
-    {
-        // Act
-        var result = await _adapter.GetImageAsync(invalidId);
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
     public async Task DeleteImageAsync_WhenFileExists_DeletesFileAndReturnsTrue()
     {
         // Arrange

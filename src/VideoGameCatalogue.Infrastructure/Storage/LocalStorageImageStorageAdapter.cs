@@ -42,21 +42,6 @@ public class LocalStorageImageStorageAdapter : IImageStoragePort
         return imageId;
     }
 
-    public Task<ImageFileResult?> GetImageAsync(string imageId, CancellationToken cancellationToken = default)
-    {
-        if (IsUnsafePath(imageId))
-            return Task.FromResult<ImageFileResult?>(null);
-
-        var filePath = GetSafeFilePath(imageId);
-        if (!File.Exists(filePath))
-            return Task.FromResult<ImageFileResult?>(null);
-
-        var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
-        var contentType = ResolveContentType(filePath);
-
-        return Task.FromResult<ImageFileResult?>(new ImageFileResult(stream, contentType, imageId));
-    }
-
     public Task<bool> DeleteImageAsync(string imageId, CancellationToken cancellationToken = default)
     {
         if (IsUnsafePath(imageId))
@@ -96,17 +81,5 @@ public class LocalStorageImageStorageAdapter : IImageStoragePort
                imageId.Contains('/') ||
                imageId.Contains('\\') ||
                imageId.Contains("..");
-    }
-
-    private static string ResolveContentType(string filePath)
-    {
-        var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        return ext switch
-        {
-            ".webp" => "image/webp",
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            _ => "application/octet-stream"
-        };
     }
 }

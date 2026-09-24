@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using VideoGameCatalogue.Application.Common.Ports;
 using VideoGameCatalogue.Domain.Ports;
 using VideoGameCatalogue.Infrastructure.Images;
@@ -71,9 +72,21 @@ public static class DependencyInjection
         }
         else
         {
-            var localPath = configuration["ImageStorage:LocalStoragePath"];
-            var localBaseUrl = configuration["ImageStorage:LocalBaseUrl"] ?? configuration["ImageStorage:BaseUrl"];
-            services.AddScoped<IImageStoragePort>(_ => new LocalStorageImageStorageAdapter(localPath, localBaseUrl));
+            services.AddScoped<IImageStoragePort>(sp =>
+            {
+                var localPath = configuration["ImageStorage:LocalStoragePath"];
+                if (string.IsNullOrWhiteSpace(localPath))
+                {
+                    var env = sp.GetService<IHostEnvironment>();
+                    if (env is not null)
+                    {
+                        localPath = Path.Combine(env.ContentRootPath, "uploads", "images");
+                    }
+                }
+
+                var localBaseUrl = configuration["ImageStorage:LocalBaseUrl"] ?? configuration["ImageStorage:BaseUrl"];
+                return new LocalStorageImageStorageAdapter(localPath, localBaseUrl);
+            });
         }
     }
 }
