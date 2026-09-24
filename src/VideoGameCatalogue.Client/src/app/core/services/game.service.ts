@@ -8,7 +8,9 @@ import { CatalogueMetadata, CreateGameRequest, Game, UpdateGameRequest } from '.
 })
 export class GameService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5111/api/games';
+  private readonly apiUrl = typeof window !== 'undefined' && window.location?.hostname
+    ? `http://${window.location.hostname}:5111/api/games`
+    : 'http://localhost:5111/api/games';
 
   getGames(searchTerm?: string, platform?: string, genre?: string): Observable<Game[]> {
     let params = new HttpParams();

@@ -196,4 +196,12 @@ describe('GameListComponent', () => {
     component.resetFilters();
     expect(component.page()).toBe(1);
   });
+
+  it('should update pageSize as a number and recalculate pagedGames', () => {
+    fixture.detectChanges();
+    component.pageSize.set(12);
+    expect(typeof component.pageSize()).toBe('number');
+    expect(component.pageSize()).toBe(12);
+    expect(component.pagedGames().length).toBe(1);
+  });
 });

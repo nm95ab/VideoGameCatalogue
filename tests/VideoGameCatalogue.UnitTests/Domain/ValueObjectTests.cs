@@ -75,6 +75,19 @@ public class ValueObjectTests
         result.Error.Code.Should().Be("ReleaseYear.Invalid");
     }
 
+    [Fact]
+    public void ReleaseYear_Create_WithExplicitCurrentYear_ShouldUseSpecifiedBase()
+    {
+        // Act: base year 2020 allows up to 2022
+        var validResult = ReleaseYear.Create(2022, 2020);
+        var invalidResult = ReleaseYear.Create(2023, 2020);
+
+        // Assert
+        validResult.IsSuccess.Should().BeTrue();
+        invalidResult.IsFailure.Should().BeTrue();
+        invalidResult.Error.Code.Should().Be("ReleaseYear.Invalid");
+    }
+
     [Theory]
     [InlineData("PC")]
     [InlineData("PlayStation 5")]

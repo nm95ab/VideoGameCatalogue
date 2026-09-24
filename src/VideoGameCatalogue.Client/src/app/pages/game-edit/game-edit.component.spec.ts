@@ -232,16 +232,15 @@ describe('GameEditComponent', () => {
       expect(component.isFieldInvalid('nonExistentField')).toBe(false);
     });
 
-    it('should use fallback options when metadata service fails', async () => {
+    it('should display error message when metadata service fails', async () => {
       TestBed.resetTestingModule();
       await setupTestBed(
         {},
         { getMetadata: vi.fn().mockReturnValue(throwError(() => new Error('Service down'))) }
       );
 
-      expect(component.platforms().length).toBeGreaterThan(0);
-      expect(component.platforms()).toContain('PC');
-      expect(component.genres()).toContain('Action');
+      expect(component.errorMessage()).toContain('Failed to load catalogue lookup options');
+      expect(component.platforms().length).toBe(0);
     });
 
     it('should delete game when modal confirms and navigate to catalogue', async () => {

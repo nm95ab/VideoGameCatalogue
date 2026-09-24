@@ -6,6 +6,24 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    // Synchronously polyfill $localize before any ESM modules or ng-bootstrap bundles execute
+    globalThis.$localize = globalThis.$localize || function (parts) {
+      var raw = (parts && parts.raw) ? parts.raw[0] : (parts ? parts[0] : '');
+      var text = parts ? parts[0] : '';
+      if (raw && raw.charAt(0) === ':') {
+        var end = -1;
+        for (var i = 1; i < text.length; i++) {
+          if (raw[i] === ':') { end = i; break; }
+        }
+        if (end !== -1) text = text.substring(end + 1);
+      }
+      for (var j = 1; j < arguments.length; j++) {
+        text += arguments[j] + (parts[j] || '');
+      }
+      return text;
+    };
+  </script>
 </head>
 <body>
   <app-root></app-root>

@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgbAlertModule, NgbTooltipModule, NgbProgressbarModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { GameService } from '../../core/services/game.service';
 import { CreateGameRequest, UpdateGameRequest } from '../../core/models/game.model';
@@ -26,6 +27,7 @@ export class GameEditComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly modalService = inject(NgbModal);
+  private readonly destroyRef = inject(DestroyRef);
 
   gameForm!: FormGroup;
   gameId: string | null = null;
@@ -44,14 +46,19 @@ export class GameEditComponent implements OnInit {
     this.initForm();
     this.loadMetadata();
 
-    this.route.paramMap.subscribe(params => {
-      this.gameId = params.get('id');
-      this.isEditMode = !!this.gameId;
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const id = params.get('id');
+        this.gameId = id;
+        this.isEditMode = !!id;
 
-      if (this.isEditMode && this.gameId) {
-        this.loadGame(this.gameId);
-      }
-    });
+        if (this.isEditMode && id) {
+          this.loadGame(id);
+        } else {
+          this.initForm();
+        }
+      });
   }
 
   private initForm(): void {
@@ -68,32 +75,31 @@ export class GameEditComponent implements OnInit {
   }
 
   private loadMetadata(): void {
-    this.gameService.getMetadata().subscribe({
-      next: (meta) => {
-        this.platforms.set(meta.platforms);
-        this.genres.set(meta.genres);
-        this.ratings.set(meta.ratings);
+    this.gameService.getMetadata()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (meta) => {
+          this.platforms.set(meta.platforms);
+          this.genres.set(meta.genres);
+          this.ratings.set(meta.ratings);
 
-        // Pre-select defaults if creating new
-        if (!this.isEditMode) {
-          if (!this.gameForm.value.platform && meta.platforms.length > 0) {
-            this.gameForm.patchValue({ platform: meta.platforms[0] });
+          // Pre-select defaults if creating new
+          if (!this.isEditMode) {
+            if (!this.gameForm.value.platform && meta.platforms.length > 0) {
+              this.gameForm.patchValue({ platform: meta.platforms[0] });
+            }
+            if (!this.gameForm.value.genre && meta.genres.length > 0) {
+              this.gameForm.patchValue({ genre: meta.genres[0] });
+            }
+            if (!this.gameForm.value.rating && meta.ratings.length > 0) {
+              this.gameForm.patchValue({ rating: meta.ratings[0] });
+            }
           }
-          if (!this.gameForm.value.genre && meta.genres.length > 0) {
-            this.gameForm.patchValue({ genre: meta.genres[0] });
-          }
-          if (!this.gameForm.value.rating && meta.ratings.length > 0) {
-            this.gameForm.patchValue({ rating: meta.ratings[0] });
-          }
+        },
+        error: () => {
+          this.errorMessage.set('Failed to load catalogue lookup options. Please ensure the backend API is running.');
         }
-      },
-      error: () => {
-        // Fallback default choices
-        this.platforms.set(['PC', 'PlayStation 5', 'Xbox Series X/S', 'Nintendo Switch']);
-        this.genres.set(['Action', 'Role-Playing (RPG)', 'Adventure', 'Strategy', 'Shooter']);
-        this.ratings.set(['Everyone', 'Teen', 'Mature 17+']);
-      }
-    });
+      });
   }
 
   private loadGame(id: string): void {
@@ -151,7 +157,7 @@ export class GameEditComponent implements OnInit {
           this.router.navigate(['/games']);
         },
         error: (err) => {
-          this.errorMessage.set(err.error?.detail || 'Failed to update video game.');
+          this.errorMessage.set(err.error?.detail || err.error?.title || 'Failed to update video game.');
           this.isSaving.set(false);
         }
       });
@@ -171,7 +177,7 @@ export class GameEditComponent implements OnInit {
           this.router.navigate(['/games']);
         },
         error: (err) => {
-          this.errorMessage.set(err.error?.detail || 'Failed to create video game.');
+          this.errorMessage.set(err.error?.detail || err.error?.title || 'Failed to create video game.');
           this.isSaving.set(false);
         }
       });

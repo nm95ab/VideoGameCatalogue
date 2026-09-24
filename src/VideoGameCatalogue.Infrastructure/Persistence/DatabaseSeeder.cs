@@ -89,8 +89,8 @@ public static class DatabaseSeeder
         if (await context.VideoGames.AnyAsync(cancellationToken))
             return;
 
-        var games = new List<VideoGame>
-        {
+        List<VideoGame> games =
+        [
             CreateGame(
                 "The Witcher 3: Wild Hunt",
                 "PC",
@@ -147,7 +147,7 @@ public static class DatabaseSeeder
                 2018,
                 "Mature 17+",
                 "Arthur Morgan and the Van der Linde gang struggle to survive in the twilight of the Wild West era.")
-        };
+        ];
 
         await context.VideoGames.AddRangeAsync(games, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);

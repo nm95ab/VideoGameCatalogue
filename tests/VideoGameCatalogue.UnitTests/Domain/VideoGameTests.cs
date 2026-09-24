@@ -110,4 +110,39 @@ public class VideoGameTests
         game.UpdatedAtUtc.Should().NotBeNull();
         game.UpdatedAtUtc!.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
+
+    [Fact]
+    public void Create_WithExplicitCreatedAtUtc_ShouldRetainTimestamp()
+    {
+        // Arrange
+        var customTimestamp = new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc);
+
+        // Act
+        var result = VideoGame.Create(
+            ValidTitle,
+            ValidPlatform,
+            ValidGenre,
+            ValidReleaseYear,
+            ValidRating,
+            "Description",
+            customTimestamp);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.CreatedAtUtc.Should().Be(customTimestamp);
+    }
+
+    [Fact]
+    public void UpdateDetails_WithExplicitUpdatedAtUtc_ShouldRetainTimestamp()
+    {
+        // Arrange
+        var game = VideoGame.Create(ValidTitle, ValidPlatform, ValidGenre, ValidReleaseYear, ValidRating).Value;
+        var customUpdateTimestamp = new DateTime(2025, 6, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        // Act
+        game.UpdateDetails(ValidTitle, ValidPlatform, ValidGenre, ValidReleaseYear, ValidRating, "Desc", customUpdateTimestamp);
+
+        // Assert
+        game.UpdatedAtUtc.Should().Be(customUpdateTimestamp);
+    }
 }

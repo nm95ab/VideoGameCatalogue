@@ -62,9 +62,10 @@ public class VideoGame
         Genre genre,
         ReleaseYear releaseYear,
         Rating rating,
-        string? description = null)
+        string? description = null,
+        DateTime? createdAtUtc = null)
     {
-        return Create(Guid.NewGuid(), title, platform, genre, releaseYear, rating, description);
+        return Create(Guid.NewGuid(), title, platform, genre, releaseYear, rating, description, createdAtUtc);
     }
 
     /// <summary>
@@ -79,10 +80,13 @@ public class VideoGame
         Genre genre,
         ReleaseYear releaseYear,
         Rating rating,
-        string? description = null)
+        string? description = null,
+        DateTime? createdAtUtc = null)
     {
         if (id == Guid.Empty)
             return Result<VideoGame>.Failure(GameErrors.InvalidId);
+
+        var timestamp = createdAtUtc ?? TimeProvider.System.GetUtcNow().UtcDateTime;
 
         var game = new VideoGame(
             id,
@@ -92,7 +96,7 @@ public class VideoGame
             releaseYear,
             rating,
             description ?? string.Empty,
-            DateTime.UtcNow);
+            timestamp);
 
         return Result<VideoGame>.Success(game);
     }
@@ -106,7 +110,8 @@ public class VideoGame
         Genre genre,
         ReleaseYear releaseYear,
         Rating rating,
-        string? description = null)
+        string? description = null,
+        DateTime? updatedAtUtc = null)
     {
         Title = title;
         Platform = platform;
@@ -114,7 +119,7 @@ public class VideoGame
         ReleaseYear = releaseYear;
         Rating = rating;
         Description = (description ?? string.Empty).Trim();
-        UpdatedAtUtc = DateTime.UtcNow;
+        UpdatedAtUtc = updatedAtUtc ?? TimeProvider.System.GetUtcNow().UtcDateTime;
 
         return Result.Success();
     }

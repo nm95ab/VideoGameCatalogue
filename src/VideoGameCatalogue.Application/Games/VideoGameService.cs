@@ -16,8 +16,12 @@ namespace VideoGameCatalogue.Application.Games;
 /// 4. Projecting domain entities into presentation-agnostic <see cref="GameDto"/> records.
 /// </para>
 /// </summary>
-public class VideoGameService(IVideoGameRepository repository, ILookupRepository lookupRepository) : IVideoGameService
+public class VideoGameService(
+    IVideoGameRepository repository,
+    ILookupRepository lookupRepository,
+    TimeProvider? timeProvider = null) : IVideoGameService
 {
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     public async Task<IReadOnlyList<GameDto>> GetAllGamesAsync(
         string? searchTerm = null,
@@ -43,13 +47,14 @@ public class VideoGameService(IVideoGameRepository repository, ILookupRepository
 
     public async Task<Result<GameDto>> CreateGameAsync(CreateGameRequest request, CancellationToken cancellationToken = default)
     {
-        var parsed = ParseValueObjects(request.Title, request.Platform, request.Genre, request.ReleaseYear, request.Rating);
+        var parsed = ParseValueObjects(request.Title, request.Platform, request.Genre, request.ReleaseYear, request.Rating, _timeProvider.GetUtcNow().Year);
         if (parsed.IsFailure)
             return Result<GameDto>.Failure(parsed.Error);
 
         var (title, platform, genre, releaseYear, rating) = parsed.Value;
 
-        var gameResult = VideoGame.Create(title, platform, genre, releaseYear, rating, request.Description);
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var gameResult = VideoGame.Create(title, platform, genre, releaseYear, rating, request.Description, utcNow);
         if (gameResult.IsFailure)
             return Result<GameDto>.Failure(gameResult.Error);
 
@@ -68,13 +73,14 @@ public class VideoGameService(IVideoGameRepository repository, ILookupRepository
         if (game is null)
             return Result<GameDto>.Failure(GameErrors.NotFound);
 
-        var parsed = ParseValueObjects(request.Title, request.Platform, request.Genre, request.ReleaseYear, request.Rating);
+        var parsed = ParseValueObjects(request.Title, request.Platform, request.Genre, request.ReleaseYear, request.Rating, _timeProvider.GetUtcNow().Year);
         if (parsed.IsFailure)
             return Result<GameDto>.Failure(parsed.Error);
 
         var (title, platform, genre, releaseYear, rating) = parsed.Value;
 
-        var updateResult = game.UpdateDetails(title, platform, genre, releaseYear, rating, request.Description);
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var updateResult = game.UpdateDetails(title, platform, genre, releaseYear, rating, request.Description, utcNow);
         if (updateResult.IsFailure)
             return Result<GameDto>.Failure(updateResult.Error);
 
@@ -118,7 +124,8 @@ public class VideoGameService(IVideoGameRepository repository, ILookupRepository
         string? rawPlatform,
         string? rawGenre,
         int rawYear,
-        string? rawRating)
+        string? rawRating,
+        int currentYear)
     {
         var titleResult = GameTitle.Create(rawTitle);
         if (titleResult.IsFailure) return Result<(GameTitle, Platform, Genre, ReleaseYear, Rating)>.Failure(titleResult.Error);
@@ -129,7 +136,7 @@ public class VideoGameService(IVideoGameRepository repository, ILookupRepository
         var genreResult = Genre.Create(rawGenre);
         if (genreResult.IsFailure) return Result<(GameTitle, Platform, Genre, ReleaseYear, Rating)>.Failure(genreResult.Error);
 
-        var yearResult = ReleaseYear.Create(rawYear);
+        var yearResult = ReleaseYear.Create(rawYear, currentYear);
         if (yearResult.IsFailure) return Result<(GameTitle, Platform, Genre, ReleaseYear, Rating)>.Failure(yearResult.Error);
 
         var ratingResult = Rating.Create(rawRating);

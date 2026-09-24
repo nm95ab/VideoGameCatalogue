@@ -24,6 +24,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Centralized RFC 7807 exception handling middleware
+app.UseExceptionHandler();
+
 // Configure the HTTP request pipeline
 app.UseCors(angularCorsPolicy);
 
@@ -38,18 +41,6 @@ using (var scope = app.Services.CreateScope())
 static async Task EnsureDatabaseInitializedAsync(VideoGameCatalogueDbContext context)
 {
     await context.Database.EnsureCreatedAsync();
-    if (!context.Database.IsRelational())
-        return;
-
-    try
-    {
-        await context.Database.ExecuteSqlRawAsync("SELECT TOP 1 1 FROM Platforms");
-    }
-    catch
-    {
-        await context.Database.EnsureDeletedAsync();
-        await context.Database.EnsureCreatedAsync();
-    }
 }
 
 // Map Endpoints

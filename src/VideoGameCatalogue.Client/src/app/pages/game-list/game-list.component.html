@@ -166,10 +166,10 @@
             id="pageSizeSelect"
             class="form-select form-select-sm w-auto d-inline-block"
             [ngModel]="pageSize()"
-            (ngModelChange)="pageSize.set($event); page.set(1)"
+            (ngModelChange)="pageSize.set(+$event); page.set(1)"
           >
             @for (opt of pageSizeOptions; track opt) {
-              <option [value]="opt">{{ opt }}</option>
+              <option [ngValue]="opt">{{ opt }}</option>
             }
           </select>
         }
