@@ -33,7 +33,7 @@ VideoGameCatalogue/
 2. **Editing / Creation Page (`/games/:id/edit` & `/games/new`)**:
    - Reactive forms with real-time validation feedback (Bootstrap `is-invalid` / `invalid-feedback`)
    - Pre-populated platform, genre, and rating choices from metadata API
-   - Numeric release year validation (1950 to current year + 2)
+   - Numeric release year validation (1950 to current year)
    - Save (with loading state) and Cancel actions returning to the browse page
 
 ---

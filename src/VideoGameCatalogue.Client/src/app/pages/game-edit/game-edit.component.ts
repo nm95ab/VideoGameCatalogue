@@ -41,6 +41,7 @@ export class GameEditComponent implements OnInit {
   readonly platforms = signal<string[]>([]);
   readonly genres = signal<string[]>([]);
   readonly ratings = signal<string[]>([]);
+  readonly currentYear = new Date().getFullYear();
 
   ngOnInit(): void {
     this.initForm();
@@ -62,13 +63,11 @@ export class GameEditComponent implements OnInit {
   }
 
   private initForm(): void {
-    const currentYear = new Date().getFullYear();
-
     this.gameForm = this.fb.group({
       title: ['', [Validators.required, Validators.maxLength(150)]],
       platform: ['', [Validators.required, Validators.maxLength(50)]],
       genre: ['', [Validators.required, Validators.maxLength(50)]],
-      releaseYear: [currentYear, [Validators.required, Validators.min(1950), Validators.max(currentYear + 2)]],
+      releaseYear: [this.currentYear, [Validators.required, Validators.min(1950), Validators.max(this.currentYear)]],
       rating: ['', [Validators.required, Validators.maxLength(30)]],
       description: ['', [Validators.maxLength(2000)]]
     });

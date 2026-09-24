@@ -124,7 +124,7 @@
                 />
                 @if (isFieldInvalid('releaseYear')) {
                   <div class="invalid-feedback">
-                    Release year must be between 1950 and next year.
+                    Release year must be between 1950 and {{ currentYear }}.
                   </div>
                 }
               </div>

@@ -11,8 +11,7 @@ public readonly record struct ReleaseYear
 
     public static Result<ReleaseYear> Create(int year, int? currentYear = null)
     {
-        var baseYear = currentYear ?? TimeProvider.System.GetUtcNow().Year;
-        var maxYear = baseYear + 2;
+        var maxYear = currentYear ?? TimeProvider.System.GetUtcNow().Year;
         if (year < MinYear || year > maxYear)
             return Result<ReleaseYear>.Failure(Error.Validation("ReleaseYear.Invalid", $"Release year must be between {MinYear} and {maxYear}."));
 

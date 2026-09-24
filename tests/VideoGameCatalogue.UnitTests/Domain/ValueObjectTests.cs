@@ -78,14 +78,29 @@ public class ValueObjectTests
     [Fact]
     public void ReleaseYear_Create_WithExplicitCurrentYear_ShouldUseSpecifiedBase()
     {
-        // Act: base year 2020 allows up to 2022
-        var validResult = ReleaseYear.Create(2022, 2020);
-        var invalidResult = ReleaseYear.Create(2023, 2020);
+        // Act: base year 2020 allows up to 2020; 2021 should fail
+        var validResult = ReleaseYear.Create(2020, 2020);
+        var invalidResult = ReleaseYear.Create(2021, 2020);
 
         // Assert
         validResult.IsSuccess.Should().BeTrue();
         invalidResult.IsFailure.Should().BeTrue();
         invalidResult.Error.Code.Should().Be("ReleaseYear.Invalid");
+    }
+
+    [Fact]
+    public void ReleaseYear_Create_WithFutureYearBeyondCurrentYear_ShouldFail()
+    {
+        // Arrange
+        var currentYear = TimeProvider.System.GetUtcNow().Year;
+
+        // Act
+        var result = ReleaseYear.Create(currentYear + 1);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("ReleaseYear.Invalid");
+        result.Error.Description.Should().Contain(currentYear.ToString());
     }
 
     [Theory]

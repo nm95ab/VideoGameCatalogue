@@ -94,6 +94,22 @@ describe('GameEditComponent', () => {
       expect(component.gameForm.get('title')?.hasError('required')).toBe(true);
     });
 
+    it('should validate releaseYear with max as current year and min as 1950', () => {
+      const yearControl = component.gameForm.get('releaseYear');
+      const currentYear = new Date().getFullYear();
+
+      yearControl?.setValue(currentYear);
+      expect(yearControl?.valid).toBe(true);
+
+      yearControl?.setValue(currentYear + 1);
+      expect(yearControl?.valid).toBe(false);
+      expect(yearControl?.hasError('max')).toBe(true);
+
+      yearControl?.setValue(1949);
+      expect(yearControl?.valid).toBe(false);
+      expect(yearControl?.hasError('min')).toBe(true);
+    });
+
     it('should submit valid new game and navigate to catalogue', () => {
       component.gameForm.patchValue({
         title: 'Half-Life 2',
