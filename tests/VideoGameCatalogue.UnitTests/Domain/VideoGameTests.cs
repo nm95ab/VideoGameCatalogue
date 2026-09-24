@@ -145,4 +145,77 @@ public class VideoGameTests
         // Assert
         game.UpdatedAtUtc.Should().Be(customUpdateTimestamp);
     }
+
+    [Fact]
+    public void Create_WithImageId_ShouldSetImageId()
+    {
+        // Arrange
+        const string imageId = "f47ac10b-58cc-4372-a567-0e02b2c3d479.webp";
+
+        // Act
+        var result = VideoGame.Create(
+            ValidTitle,
+            ValidPlatform,
+            ValidGenre,
+            ValidReleaseYear,
+            ValidRating,
+            "Description",
+            imageId: imageId);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.ImageId.Should().Be(imageId);
+    }
+
+    [Fact]
+    public void SetImage_WithValidImageId_ShouldUpdateImageId()
+    {
+        // Arrange
+        var game = VideoGame.Create(ValidTitle, ValidPlatform, ValidGenre, ValidReleaseYear, ValidRating).Value;
+        const string imageId = "game-art-123.webp";
+
+        // Act
+        var result = game.SetImage(imageId);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        game.ImageId.Should().Be(imageId);
+    }
+
+    [Theory]
+    [InlineData("../secret.png")]
+    [InlineData("folder/image.png")]
+    [InlineData("folder\\image.png")]
+    public void SetImage_WithDirectoryTraversal_ShouldFail(string maliciousImageId)
+    {
+        // Arrange
+        var game = VideoGame.Create(ValidTitle, ValidPlatform, ValidGenre, ValidReleaseYear, ValidRating).Value;
+
+        // Act
+        var result = game.SetImage(maliciousImageId);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("VideoGame.InvalidImageId");
+    }
+
+    [Fact]
+    public void RemoveImage_ShouldSetImageIdToNull()
+    {
+        // Arrange
+        var game = VideoGame.Create(
+            ValidTitle,
+            ValidPlatform,
+            ValidGenre,
+            ValidReleaseYear,
+            ValidRating,
+            "Description",
+            imageId: "thumbnail.webp").Value;
+
+        // Act
+        game.RemoveImage();
+
+        // Assert
+        game.ImageId.Should().BeNull();
+    }
 }

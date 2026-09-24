@@ -38,6 +38,12 @@ export class GameEditComponent implements OnInit {
   readonly isDeleting = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
 
+  selectedFile: File | null = null;
+  readonly imagePreviewUrl = signal<string | null>(null);
+  readonly currentImageId = signal<string | null>(null);
+  readonly isImageRemoved = signal<boolean>(false);
+  readonly imageError = signal<string | null>(null);
+
   readonly platforms = signal<string[]>([]);
   readonly genres = signal<string[]>([]);
   readonly ratings = signal<string[]>([]);
@@ -63,6 +69,12 @@ export class GameEditComponent implements OnInit {
   }
 
   private initForm(): void {
+    this.currentImageId.set(null);
+    this.isImageRemoved.set(false);
+    this.selectedFile = null;
+    this.imagePreviewUrl.set(null);
+    this.imageError.set(null);
+
     this.gameForm = this.fb.group({
       title: ['', [Validators.required, Validators.maxLength(150)]],
       platform: ['', [Validators.required, Validators.maxLength(50)]],
@@ -115,6 +127,15 @@ export class GameEditComponent implements OnInit {
           rating: game.rating,
           description: game.description
         });
+        this.currentImageId.set(game.imageId || null);
+        this.isImageRemoved.set(false);
+        this.selectedFile = null;
+        this.imageError.set(null);
+        if (game.imageId) {
+          this.imagePreviewUrl.set(this.gameService.getImageUrl(game.imageId));
+        } else {
+          this.imagePreviewUrl.set(null);
+        }
         this.isLoading.set(false);
       },
       error: () => {
@@ -129,6 +150,56 @@ export class GameEditComponent implements OnInit {
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
+    const file = input.files[0];
+    this.imageError.set(null);
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      this.imageError.set('Please select a valid image file (JPEG, PNG, or WebP).');
+      input.value = '';
+      return;
+    }
+
+    const maxSize = 10 * 1024 * 1024; // 10 MB
+    if (file.size > maxSize) {
+      this.imageError.set('Image size exceeds the 10 MB limit.');
+      input.value = '';
+      return;
+    }
+
+    this.selectedFile = file;
+    this.isImageRemoved.set(false);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imagePreviewUrl.set(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  onRemoveImage(): void {
+    this.selectedFile = null;
+    this.imagePreviewUrl.set(null);
+    this.isImageRemoved.set(true);
+    this.imageError.set(null);
+  }
+
+  getInitials(title: string): string {
+    if (!title?.trim()) {
+      return '??';
+    }
+    const words = title.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 1) {
+      return words[0].substring(0, Math.min(2, words[0].length)).toUpperCase();
+    }
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
   onSubmit(): void {
     if (this.gameForm.invalid) {
       this.gameForm.markAllAsTouched();
@@ -138,6 +209,23 @@ export class GameEditComponent implements OnInit {
     this.isSaving.set(true);
     this.errorMessage.set(null);
 
+    if (this.selectedFile) {
+      this.gameService.uploadImage(this.selectedFile).subscribe({
+        next: (res) => {
+          this.saveGameWithImage(res.imageId);
+        },
+        error: (err) => {
+          this.errorMessage.set(err.error?.detail || err.error?.title || 'Failed to upload game image.');
+          this.isSaving.set(false);
+        }
+      });
+    } else {
+      const imageId = this.isImageRemoved() ? null : this.currentImageId();
+      this.saveGameWithImage(imageId);
+    }
+  }
+
+  private saveGameWithImage(imageId: string | null): void {
     const formValues = this.gameForm.value;
 
     if (this.isEditMode && this.gameId) {
@@ -147,7 +235,8 @@ export class GameEditComponent implements OnInit {
         genre: formValues.genre,
         releaseYear: Number(formValues.releaseYear),
         rating: formValues.rating,
-        description: formValues.description
+        description: formValues.description,
+        imageId: imageId
       };
 
       this.gameService.updateGame(this.gameId, request).subscribe({
@@ -167,7 +256,8 @@ export class GameEditComponent implements OnInit {
         genre: formValues.genre,
         releaseYear: Number(formValues.releaseYear),
         rating: formValues.rating,
-        description: formValues.description
+        description: formValues.description,
+        imageId: imageId
       };
 
       this.gameService.createGame(request).subscribe({

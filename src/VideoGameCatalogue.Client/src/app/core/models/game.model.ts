@@ -6,6 +6,8 @@ export interface Game {
   releaseYear: number;
   rating: string;
   description: string;
+  imageId?: string | null;
+  imageUrl?: string | null;
   createdAtUtc: string;
   updatedAtUtc?: string | null;
 }
@@ -17,6 +19,7 @@ export interface CreateGameRequest {
   releaseYear: number;
   rating: string;
   description?: string;
+  imageId?: string | null;
 }
 
 export interface UpdateGameRequest {
@@ -26,6 +29,12 @@ export interface UpdateGameRequest {
   releaseYear: number;
   rating: string;
   description?: string;
+  imageId?: string | null;
+}
+
+export interface ImageUploadResponse {
+  imageId: string;
+  url: string;
 }
 
 export interface CatalogueMetadata {

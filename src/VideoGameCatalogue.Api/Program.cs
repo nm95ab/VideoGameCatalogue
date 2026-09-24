@@ -41,10 +41,12 @@ using (var scope = app.Services.CreateScope())
 static async Task EnsureDatabaseInitializedAsync(VideoGameCatalogueDbContext context)
 {
     await context.Database.EnsureCreatedAsync();
+    await DatabaseSeeder.MigrateSchemaAsync(context);
 }
 
 // Map Endpoints
 app.MapVideoGameEndpoints();
+app.MapImageEndpoints();
 
 app.Run();
 

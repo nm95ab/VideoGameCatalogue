@@ -132,4 +132,32 @@ describe('GameService', () => {
     expect(req.request.method).toBe('GET');
     req.flush(mockMeta);
   });
+
+  it('should upload image', () => {
+    const mockFile = new File(['dummy-content'], 'test.png', { type: 'image/png' });
+    const mockResponse = { imageId: 'img-123.webp', url: '/api/images/img-123.webp' };
+
+    service.uploadImage(mockFile).subscribe(res => {
+      expect(res.imageId).toBe('img-123.webp');
+      expect(res.url).toBe('/api/images/img-123.webp');
+    });
+
+    const req = httpTesting.expectOne('http://localhost:5111/api/images');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBe(true);
+    req.flush(mockResponse);
+  });
+
+  it('should delete image', () => {
+    service.deleteImage('img-123.webp').subscribe();
+
+    const req = httpTesting.expectOne('http://localhost:5111/api/images/img-123.webp');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
+
+  it('should return image URL', () => {
+    const url = service.getImageUrl('img-123.webp');
+    expect(url).toBe('http://localhost:5111/api/images/img-123.webp');
+  });
 });

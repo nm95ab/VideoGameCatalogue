@@ -307,4 +307,75 @@ public class VideoGameServiceTests
         metadata.Genres.Should().Equal("Action", "Role-Playing (RPG)");
         metadata.Ratings.Should().Equal("Everyone", "Mature 17+");
     }
+
+    [Fact]
+    public async Task CreateGameAsync_WithImageId_ShouldSetImageIdAndComputeImageUrl()
+    {
+        // Arrange
+        const string imageId = "chrono-art.webp";
+        var request = new CreateGameRequest("Chrono", "SNES", "RPG", 1995, "Everyone", "Desc", imageId);
+
+        // Act
+        var result = await _service.CreateGameAsync(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.ImageId.Should().Be(imageId);
+        result.Value.ImageUrl.Should().Be($"/api/images/{imageId}");
+    }
+
+    [Fact]
+    public async Task UpdateGameAsync_WhenImageReplaced_ShouldDeleteOldImageFromStorage()
+    {
+        // Arrange
+        var mockStorage = Substitute.For<IImageStoragePort>();
+        var serviceWithStorage = new VideoGameService(_repository, _lookupRepository, imageStorage: mockStorage);
+
+        var existingGame = VideoGame.Create(
+            GameTitle.Create("Zelda").Value,
+            Platform.Create("Nintendo Switch").Value,
+            Genre.Create("Action-Adventure").Value,
+            ReleaseYear.Create(2017).Value,
+            Rating.Create("Everyone 10+").Value,
+            "Desc",
+            imageId: "old-zelda.webp").Value;
+
+        _repository.GetByIdAsync(existingGame.Id, Arg.Any<CancellationToken>()).Returns(existingGame);
+
+        var request = new UpdateGameRequest("Zelda", "Nintendo Switch", "Action-Adventure", 2017, "Everyone 10+", "Desc", "new-zelda.webp");
+
+        // Act
+        var result = await serviceWithStorage.UpdateGameAsync(existingGame.Id, request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.ImageId.Should().Be("new-zelda.webp");
+        await mockStorage.Received(1).DeleteImageAsync("old-zelda.webp", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteGameAsync_WhenGameHasImage_ShouldDeleteImageFromStorage()
+    {
+        // Arrange
+        var mockStorage = Substitute.For<IImageStoragePort>();
+        var serviceWithStorage = new VideoGameService(_repository, _lookupRepository, imageStorage: mockStorage);
+
+        var existingGame = VideoGame.Create(
+            GameTitle.Create("Zelda").Value,
+            Platform.Create("Nintendo Switch").Value,
+            Genre.Create("Action-Adventure").Value,
+            ReleaseYear.Create(2017).Value,
+            Rating.Create("Everyone 10+").Value,
+            "Desc",
+            imageId: "zelda-to-delete.webp").Value;
+
+        _repository.GetByIdAsync(existingGame.Id, Arg.Any<CancellationToken>()).Returns(existingGame);
+
+        // Act
+        var result = await serviceWithStorage.DeleteGameAsync(existingGame.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await mockStorage.Received(1).DeleteImageAsync("zelda-to-delete.webp", Arg.Any<CancellationToken>());
+    }
 }

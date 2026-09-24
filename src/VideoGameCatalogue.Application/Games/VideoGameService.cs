@@ -19,7 +19,8 @@ namespace VideoGameCatalogue.Application.Games;
 public class VideoGameService(
     IVideoGameRepository repository,
     ILookupRepository lookupRepository,
-    TimeProvider? timeProvider = null) : IVideoGameService
+    TimeProvider? timeProvider = null,
+    IImageStoragePort? imageStorage = null) : IVideoGameService
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
@@ -54,7 +55,7 @@ public class VideoGameService(
         var (title, platform, genre, releaseYear, rating) = parsed.Value;
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var gameResult = VideoGame.Create(title, platform, genre, releaseYear, rating, request.Description, utcNow);
+        var gameResult = VideoGame.Create(title, platform, genre, releaseYear, rating, request.Description, utcNow, request.ImageId);
         if (gameResult.IsFailure)
             return Result<GameDto>.Failure(gameResult.Error);
 
@@ -79,12 +80,18 @@ public class VideoGameService(
 
         var (title, platform, genre, releaseYear, rating) = parsed.Value;
 
+        var oldImageId = game.ImageId;
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var updateResult = game.UpdateDetails(title, platform, genre, releaseYear, rating, request.Description, utcNow);
+        var updateResult = game.UpdateDetails(title, platform, genre, releaseYear, rating, request.Description, utcNow, request.ImageId);
         if (updateResult.IsFailure)
             return Result<GameDto>.Failure(updateResult.Error);
 
         await repository.UpdateAsync(game, cancellationToken);
+
+        if (imageStorage is not null && !string.IsNullOrWhiteSpace(oldImageId) && oldImageId != request.ImageId)
+        {
+            await imageStorage.DeleteImageAsync(oldImageId, cancellationToken);
+        }
 
         return Result<GameDto>.Success(GameDto.FromDomain(game));
     }
@@ -98,7 +105,14 @@ public class VideoGameService(
         if (game is null)
             return Result.Failure(GameErrors.NotFound);
 
+        var imageId = game.ImageId;
         await repository.DeleteAsync(game, cancellationToken);
+
+        if (imageStorage is not null && !string.IsNullOrWhiteSpace(imageId))
+        {
+            await imageStorage.DeleteImageAsync(imageId, cancellationToken);
+        }
+
         return Result.Success();
     }
 

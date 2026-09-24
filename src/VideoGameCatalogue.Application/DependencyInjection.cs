@@ -9,6 +9,7 @@ public static class DependencyInjection
     {
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IVideoGameService, VideoGameService>();
+        services.AddScoped<Images.IImageManagementService, Images.ImageManagementService>();
         return services;
     }
 }

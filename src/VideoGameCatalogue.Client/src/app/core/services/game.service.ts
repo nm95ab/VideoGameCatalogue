@@ -1,16 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CatalogueMetadata, CreateGameRequest, Game, UpdateGameRequest } from '../models/game.model';
+import { CatalogueMetadata, CreateGameRequest, Game, ImageUploadResponse, UpdateGameRequest } from '../models/game.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GameService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = typeof window !== 'undefined' && window.location?.hostname
-    ? `http://${window.location.hostname}:5111/api/games`
-    : 'http://localhost:5111/api/games';
+  private readonly baseUrl = typeof window !== 'undefined' && window.location?.hostname
+    ? `http://${window.location.hostname}:5111/api`
+    : 'http://localhost:5111/api';
+  private readonly apiUrl = `${this.baseUrl}/games`;
+  private readonly imagesUrl = `${this.baseUrl}/images`;
 
   getGames(searchTerm?: string, platform?: string, genre?: string): Observable<Game[]> {
     let params = new HttpParams();
@@ -48,5 +50,19 @@ export class GameService {
 
   getMetadata(): Observable<CatalogueMetadata> {
     return this.http.get<CatalogueMetadata>(`${this.apiUrl}/metadata`);
+  }
+
+  uploadImage(file: File): Observable<ImageUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ImageUploadResponse>(this.imagesUrl, formData);
+  }
+
+  deleteImage(imageId: string): Observable<void> {
+    return this.http.delete<void>(`${this.imagesUrl}/${imageId}`);
+  }
+
+  getImageUrl(imageId: string): string {
+    return `${this.imagesUrl}/${imageId}`;
   }
 }

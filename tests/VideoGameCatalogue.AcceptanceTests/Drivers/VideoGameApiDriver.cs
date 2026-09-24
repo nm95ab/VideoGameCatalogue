@@ -84,6 +84,35 @@ public class VideoGameApiDriver(HttpClient httpClient)
         return JsonSerializer.Deserialize<GameDto>(LastResponseBody, JsonOptions);
     }
 
+    public async Task UploadImageAsync(byte[] bytes, string fileName, string contentType)
+    {
+        using var multipart = new MultipartFormDataContent();
+        var byteContent = new ByteArrayContent(bytes);
+        byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        multipart.Add(byteContent, "file", fileName);
+
+        LastResponse = await httpClient.PostAsync("/api/images", multipart);
+        LastResponseBody = await LastResponse.Content.ReadAsStringAsync();
+    }
+
+    public async Task GetImageDirectAsync(string imageId)
+    {
+        LastResponse = await httpClient.GetAsync($"/api/images/{imageId}");
+        LastResponseBody = await LastResponse.Content.ReadAsStringAsync();
+    }
+
+    public async Task DeleteImageDirectAsync(string imageId)
+    {
+        LastResponse = await httpClient.DeleteAsync($"/api/images/{imageId}");
+        LastResponseBody = await LastResponse.Content.ReadAsStringAsync();
+    }
+
+    public async Task<VideoGameCatalogue.Application.Images.ImageUploadResponse?> ReadImageUploadResponseAsync()
+    {
+        if (string.IsNullOrWhiteSpace(LastResponseBody)) return null;
+        return JsonSerializer.Deserialize<VideoGameCatalogue.Application.Images.ImageUploadResponse>(LastResponseBody, JsonOptions);
+    }
+
     public async Task<CatalogueMetadataDto?> ReadMetadataAsync()
     {
         if (string.IsNullOrWhiteSpace(LastResponseBody)) return null;

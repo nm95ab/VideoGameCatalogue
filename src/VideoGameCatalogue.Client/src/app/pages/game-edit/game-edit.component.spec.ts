@@ -22,6 +22,7 @@ describe('GameEditComponent', () => {
     releaseYear: 2011,
     rating: 'Everyone 10+',
     description: 'Valve puzzle game',
+    imageId: 'existing-img-id.webp',
     createdAtUtc: '2026-01-01T00:00:00Z',
     updatedAtUtc: null
   };
@@ -37,6 +38,8 @@ describe('GameEditComponent', () => {
       createGame: vi.fn().mockReturnValue(of(existingGame)),
       updateGame: vi.fn().mockReturnValue(of(existingGame)),
       deleteGame: vi.fn().mockReturnValue(of(void 0)),
+      uploadImage: vi.fn().mockReturnValue(of({ imageId: 'new-uploaded-id.webp', url: '/api/images/new-uploaded-id.webp' })),
+      getImageUrl: vi.fn((id: string) => `http://localhost:5111/api/images/${id}`),
       ...serviceOverrides
     };
 
@@ -128,7 +131,8 @@ describe('GameEditComponent', () => {
         genre: 'Action',
         releaseYear: 2004,
         rating: 'Mature 17+',
-        description: 'FPS classic'
+        description: 'FPS classic',
+        imageId: null
       });
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
     });
@@ -295,6 +299,100 @@ describe('GameEditComponent', () => {
       await fixture.whenStable();
 
       expect(mockGameService.deleteGame).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Image Handling', () => {
+    beforeEach(async () => {
+      await setupTestBed({ id: existingGame.id });
+    });
+
+    it('should initialize with existing image in edit mode', () => {
+      expect(component.currentImageId()).toBe('existing-img-id.webp');
+      expect(component.imagePreviewUrl()).toBe('http://localhost:5111/api/images/existing-img-id.webp');
+      expect(component.isImageRemoved()).toBe(false);
+    });
+
+    it('should handle onRemoveImage', () => {
+      component.onRemoveImage();
+      expect(component.imagePreviewUrl()).toBeNull();
+      expect(component.selectedFile).toBeNull();
+      expect(component.isImageRemoved()).toBe(true);
+    });
+
+    it('should reject file exceeding 10MB', () => {
+      const largeFile = new File(['x'.repeat(100)], 'huge.png', { type: 'image/png' });
+      Object.defineProperty(largeFile, 'size', { value: 11 * 1024 * 1024 });
+
+      const event = { target: { files: [largeFile], value: 'huge.png' } } as unknown as Event;
+
+      component.onFileSelected(event);
+      expect(component.imageError()).toBe('Image size exceeds the 10 MB limit.');
+      expect(component.selectedFile).toBeNull();
+    });
+
+    it('should reject invalid file types', () => {
+      const invalidFile = new File(['text'], 'notes.txt', { type: 'text/plain' });
+      const event = { target: { files: [invalidFile], value: 'notes.txt' } } as unknown as Event;
+
+      component.onFileSelected(event);
+      expect(component.imageError()).toBe('Please select a valid image file (JPEG, PNG, or WebP).');
+      expect(component.selectedFile).toBeNull();
+    });
+
+    it('should accept valid image file and set preview', () => {
+      const validFile = new File(['image-bytes'], 'cover.png', { type: 'image/png' });
+      const event = { target: { files: [validFile], value: 'cover.png' } } as unknown as Event;
+
+      component.onFileSelected(event);
+      expect(component.selectedFile).toBe(validFile);
+      expect(component.isImageRemoved()).toBe(false);
+      expect(component.imageError()).toBeNull();
+    });
+
+    it('should upload image and update game with new imageId on submit', () => {
+      const validFile = new File(['image-bytes'], 'cover.png', { type: 'image/png' });
+      component.selectedFile = validFile;
+
+      component.onSubmit();
+
+      expect(mockGameService.uploadImage).toHaveBeenCalledWith(validFile);
+      expect(mockGameService.updateGame).toHaveBeenCalledWith(
+        existingGame.id,
+        expect.objectContaining({ imageId: 'new-uploaded-id.webp' })
+      );
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
+    });
+
+    it('should handle upload error on submit', () => {
+      vi.mocked(mockGameService.uploadImage!).mockReturnValue(
+        throwError(() => ({ error: { detail: 'Corrupt image' } }))
+      );
+
+      const validFile = new File(['image-bytes'], 'corrupt.png', { type: 'image/png' });
+      component.selectedFile = validFile;
+
+      component.onSubmit();
+
+      expect(component.errorMessage()).toBe('Corrupt image');
+      expect(component.isSaving()).toBe(false);
+      expect(mockGameService.updateGame).not.toHaveBeenCalled();
+    });
+
+    it('should save game with null imageId when image was removed', () => {
+      component.onRemoveImage();
+      component.onSubmit();
+
+      expect(mockGameService.updateGame).toHaveBeenCalledWith(
+        existingGame.id,
+        expect.objectContaining({ imageId: null })
+      );
+    });
+
+    it('should compute getInitials correctly', () => {
+      expect(component.getInitials('Final Fantasy')).toBe('FF');
+      expect(component.getInitials('Halo')).toBe('HA');
+      expect(component.getInitials('')).toBe('??');
     });
   });
 });

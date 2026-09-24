@@ -67,6 +67,9 @@ public class VideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
             .HasMaxLength(2000)
             .IsRequired();
 
+        builder.Property(x => x.ImageId)
+            .HasMaxLength(100);
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 

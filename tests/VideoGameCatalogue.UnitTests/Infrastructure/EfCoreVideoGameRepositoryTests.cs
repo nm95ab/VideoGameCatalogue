@@ -21,6 +21,7 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
 
         _context = new VideoGameCatalogueDbContext(options);
         _context.Database.EnsureCreated();
+        DatabaseSeeder.MigrateSchema(_context);
         _context.VideoGames.ExecuteDelete();
 
         _repository = new EfCoreVideoGameRepository(_context);

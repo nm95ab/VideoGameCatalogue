@@ -6,7 +6,8 @@ public record CreateGameRequest(
     string Genre,
     int ReleaseYear,
     string Rating,
-    string? Description);
+    string? Description,
+    string? ImageId = null);
 
 public record UpdateGameRequest(
     string Title,
@@ -14,7 +15,8 @@ public record UpdateGameRequest(
     string Genre,
     int ReleaseYear,
     string Rating,
-    string? Description);
+    string? Description,
+    string? ImageId = null);
 
 public record CatalogueMetadataDto(
     IReadOnlyList<string> Platforms,

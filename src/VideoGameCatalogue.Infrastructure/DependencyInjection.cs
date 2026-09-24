@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using VideoGameCatalogue.Application.Common.Ports;
 using VideoGameCatalogue.Domain.Ports;
+using VideoGameCatalogue.Infrastructure.Images;
 using VideoGameCatalogue.Infrastructure.Persistence;
 using VideoGameCatalogue.Infrastructure.Persistence.Repositories;
+using VideoGameCatalogue.Infrastructure.Storage;
 
 namespace VideoGameCatalogue.Infrastructure;
 
@@ -38,6 +41,25 @@ public static class DependencyInjection
         services.AddScoped<IVideoGameRepository, EfCoreVideoGameRepository>();
         services.AddScoped<ILookupRepository, EfCoreLookupRepository>();
 
+        services.AddSingleton<IImageThumbnailProcessor, ImageSharpThumbnailProcessor>();
+        RegisterImageStorage(services, configuration);
+
         return services;
+    }
+
+    private static void RegisterImageStorage(IServiceCollection services, IConfiguration configuration)
+    {
+        var provider = configuration["ImageStorage:Provider"];
+        if (string.Equals(provider, "AzureBlob", StringComparison.OrdinalIgnoreCase))
+        {
+            var azureConnectionString = configuration["ImageStorage:AzureBlob:ConnectionString"] ?? string.Empty;
+            var containerName = configuration["ImageStorage:AzureBlob:ContainerName"] ?? "game-thumbnails";
+            services.AddScoped<IImageStoragePort>(_ => new AzureBlobStorageImageStorageAdapter(azureConnectionString, containerName));
+        }
+        else
+        {
+            var localPath = configuration["ImageStorage:LocalStoragePath"];
+            services.AddScoped<IImageStoragePort>(_ => new LocalStorageImageStorageAdapter(localPath));
+        }
     }
 }

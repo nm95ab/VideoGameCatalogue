@@ -151,4 +151,32 @@ export class GameListComponent implements OnInit {
   navigateToEdit(id: string): void {
     this.router.navigate(['/games', id, 'edit']);
   }
+
+  getImageUrl(imageId: string): string {
+    return this.gameService.getImageUrl(imageId);
+  }
+
+  getInitials(title: string): string {
+    if (!title?.trim()) {
+      return '??';
+    }
+    const words = title.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 1) {
+      return words[0].substring(0, Math.min(2, words[0].length)).toUpperCase();
+    }
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  onImageError(event: Event, title: string): void {
+    const target = event.target as HTMLElement;
+    if (target && target.parentElement) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'rounded bg-primary-subtle text-primary border d-flex align-items-center justify-content-center fw-bold small shadow-sm flex-shrink-0';
+      placeholder.style.width = '44px';
+      placeholder.style.height = '44px';
+      placeholder.title = title;
+      placeholder.textContent = this.getInitials(title);
+      target.parentElement.replaceChild(placeholder, target);
+    }
+  }
 }

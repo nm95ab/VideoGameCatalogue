@@ -29,7 +29,8 @@ describe('GameListComponent', () => {
   beforeEach(async () => {
     mockGameService = {
       getGames: vi.fn().mockReturnValue(of(sampleGames)),
-      getMetadata: vi.fn().mockReturnValue(of({ platforms: ['SNES'], genres: ['Platformer'], ratings: ['Everyone'] }))
+      getMetadata: vi.fn().mockReturnValue(of({ platforms: ['SNES'], genres: ['Platformer'], ratings: ['Everyone'] })),
+      getImageUrl: vi.fn((id: string) => `http://localhost:5111/api/images/${id}`)
     };
 
     mockRouter = {
@@ -203,5 +204,35 @@ describe('GameListComponent', () => {
     expect(typeof component.pageSize()).toBe('number');
     expect(component.pageSize()).toBe(12);
     expect(component.pagedGames().length).toBe(1);
+  });
+
+  describe('Thumbnails and Initials', () => {
+    it('should calculate initials correctly', () => {
+      expect(component.getInitials('Chrono Trigger')).toBe('CT');
+      expect(component.getInitials('Doom')).toBe('DO');
+      expect(component.getInitials('   ')).toBe('??');
+      expect(component.getInitials('')).toBe('??');
+    });
+
+    it('should delegate getImageUrl to gameService', () => {
+      const url = component.getImageUrl('test-123.webp');
+      expect(url).toBe('http://localhost:5111/api/images/test-123.webp');
+      expect(mockGameService.getImageUrl).toHaveBeenCalledWith('test-123.webp');
+    });
+
+    it('should handle onImageError by replacing img with initials placeholder', () => {
+      const parent = document.createElement('div');
+      const img = document.createElement('img');
+      parent.appendChild(img);
+
+      const mockEvent = { target: img } as unknown as Event;
+      component.onImageError(mockEvent, 'Zelda Ocarina');
+
+      expect(parent.children.length).toBe(1);
+      const placeholder = parent.firstElementChild as HTMLElement;
+      expect(placeholder.tagName).toBe('DIV');
+      expect(placeholder.textContent).toBe('ZO');
+      expect(placeholder.title).toBe('Zelda Ocarina');
+    });
   });
 });

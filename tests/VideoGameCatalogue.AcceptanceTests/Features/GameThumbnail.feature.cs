@@ -17,22 +17,23 @@ namespace VideoGameCatalogue.AcceptanceTests.Features
     
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Reqnroll", "3.0.0.0")]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public partial class GameUpdateFeature : object, global::Xunit.IClassFixture<GameUpdateFeature.FixtureData>, global::Xunit.IAsyncLifetime
+    public partial class GameThumbnailManagementFeature : object, global::Xunit.IClassFixture<GameThumbnailManagementFeature.FixtureData>, global::Xunit.IAsyncLifetime
     {
         
         private global::Reqnroll.ITestRunner testRunner;
         
         private static string[] featureTags = ((string[])(null));
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "Game Update", "    As a catalogue manager\n    I want to update the details of an existing video " +
-                "game\n    So that changes and corrections are saved in the system", global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "Game Thumbnail Management", "    As a catalogue manager\n    I want to upload, retrieve, associate, and delete " +
+                "thumbnail images for games\n    So that the catalogue displays visual representat" +
+                "ions of games without degrading performance", global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
         
         private global::Xunit.Abstractions.ITestOutputHelper _testOutputHelper;
         
-#line 1 "GameUpdate.feature"
+#line 1 "GameThumbnail.feature"
 #line hidden
         
-        public GameUpdateFeature(GameUpdateFeature.FixtureData fixtureData, global::Xunit.Abstractions.ITestOutputHelper testOutputHelper)
+        public GameThumbnailManagementFeature(GameThumbnailManagementFeature.FixtureData fixtureData, global::Xunit.Abstractions.ITestOutputHelper testOutputHelper)
         {
             this._testOutputHelper = testOutputHelper;
         }
@@ -106,7 +107,7 @@ namespace VideoGameCatalogue.AcceptanceTests.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/GameUpdate.feature.ndjson", 6);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/GameThumbnail.feature.ndjson", 7);
         }
         
         async global::System.Threading.Tasks.Task global::Xunit.IAsyncLifetime.InitializeAsync()
@@ -134,15 +135,15 @@ namespace VideoGameCatalogue.AcceptanceTests.Features
             await this.TestTearDownAsync();
         }
         
-        [global::Xunit.SkippableFactAttribute(DisplayName="Successfully update an existing game")]
-        [global::Xunit.TraitAttribute("FeatureTitle", "Game Update")]
-        [global::Xunit.TraitAttribute("Description", "Successfully update an existing game")]
-        public async global::System.Threading.Tasks.Task SuccessfullyUpdateAnExistingGame()
+        [global::Xunit.SkippableFactAttribute(DisplayName="Upload valid image creates thumbnail and returns image ID")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Thumbnail Management")]
+        [global::Xunit.TraitAttribute("Description", "Upload valid image creates thumbnail and returns image ID")]
+        public async global::System.Threading.Tasks.Task UploadValidImageCreatesThumbnailAndReturnsImageID()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "0";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Successfully update an existing game", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Upload valid image creates thumbnail and returns image ID", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
 #line 6
@@ -156,60 +157,98 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             {
                 await this.ScenarioStartAsync();
 #line 7
-    await testRunner.GivenAsync("an existing game in the catalogue", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.WhenAsync("I upload a valid sample image \"cover.png\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-                global::Reqnroll.Table table8 = new global::Reqnroll.Table(new string[] {
-                            "Field",
-                            "Value"});
-                table8.AddRow(new string[] {
-                            "Title",
-                            "Chrono Trigger (Definitive Remake)"});
-                table8.AddRow(new string[] {
-                            "Platform",
-                            "PC"});
-                table8.AddRow(new string[] {
-                            "Genre",
-                            "Role-Playing (RPG)"});
-                table8.AddRow(new string[] {
-                            "ReleaseYear",
-                            "2024"});
-                table8.AddRow(new string[] {
-                            "Rating",
-                            "Everyone 10+"});
-                table8.AddRow(new string[] {
-                            "Description",
-                            "Upgraded HD textures and orchestra"});
 #line 8
-    await testRunner.WhenAsync("I update the game with details:", ((string)(null)), table8, "When ");
+    await testRunner.ThenAsync("the response status code should be 201", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 16
-    await testRunner.ThenAsync("the response status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-#line 17
-    await testRunner.AndAsync("the updated game title should be \"Chrono Trigger (Definitive Remake)\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
-#line 18
-    await testRunner.AndAsync("the updated game platform should be \"PC\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
-#line 19
-    await testRunner.AndAsync("the updated game release year should be 2024", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
-#line 20
-    await testRunner.AndAsync("the updated game updatedAtUtc timestamp should be present", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 9
+    await testRunner.AndAsync("the image upload response should contain a valid image ID and URL", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [global::Xunit.SkippableFactAttribute(DisplayName="Reject update when release year is beyond current year")]
-        [global::Xunit.TraitAttribute("FeatureTitle", "Game Update")]
-        [global::Xunit.TraitAttribute("Description", "Reject update when release year is beyond current year")]
-        public async global::System.Threading.Tasks.Task RejectUpdateWhenReleaseYearIsBeyondCurrentYear()
+        [global::Xunit.SkippableFactAttribute(DisplayName="Retrieve uploaded thumbnail image")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Thumbnail Management")]
+        [global::Xunit.TraitAttribute("Description", "Retrieve uploaded thumbnail image")]
+        public async global::System.Threading.Tasks.Task RetrieveUploadedThumbnailImage()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "1";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Reject update when release year is beyond current year", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Retrieve uploaded thumbnail image", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 11
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 12
+    await testRunner.GivenAsync("an uploaded image \"avatar.png\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 13
+    await testRunner.WhenAsync("I request the image by its ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 14
+    await testRunner.ThenAsync("the response status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 15
+    await testRunner.AndAsync("the response content type should be \"image/webp\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Xunit.SkippableFactAttribute(DisplayName="Reject invalid image upload with non-image data")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Thumbnail Management")]
+        [global::Xunit.TraitAttribute("Description", "Reject invalid image upload with non-image data")]
+        public async global::System.Threading.Tasks.Task RejectInvalidImageUploadWithNon_ImageData()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "2";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Reject invalid image upload with non-image data", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 17
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 18
+    await testRunner.WhenAsync("I upload an invalid image file \"document.txt\" with text content", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 19
+    await testRunner.ThenAsync("the response status code should be 400", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 20
+    await testRunner.AndAsync("the error code should be \"Image.InvalidFormat\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Xunit.SkippableFactAttribute(DisplayName="Create game with uploaded thumbnail image")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Thumbnail Management")]
+        [global::Xunit.TraitAttribute("Description", "Create game with uploaded thumbnail image")]
+        public async global::System.Threading.Tasks.Task CreateGameWithUploadedThumbnailImage()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "3";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Create game with uploaded thumbnail image", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
 #line 22
@@ -223,33 +262,36 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             {
                 await this.ScenarioStartAsync();
 #line 23
-    await testRunner.GivenAsync("an existing game in the catalogue", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync("an uploaded image \"gameart.png\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 24
-    await testRunner.WhenAsync("I update the game with release year 2099", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("I create a game with the uploaded image ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 25
-    await testRunner.ThenAsync("the response status code should be 400", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.ThenAsync("the response status code should be 201", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 26
-    await testRunner.AndAsync("the error code should be \"ReleaseYear.Invalid\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the created game should reference the image ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 27
+    await testRunner.AndAsync("the created game should have an image URL", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [global::Xunit.SkippableFactAttribute(DisplayName="Reject update when title is empty")]
-        [global::Xunit.TraitAttribute("FeatureTitle", "Game Update")]
-        [global::Xunit.TraitAttribute("Description", "Reject update when title is empty")]
-        public async global::System.Threading.Tasks.Task RejectUpdateWhenTitleIsEmpty()
+        [global::Xunit.SkippableFactAttribute(DisplayName="Delete uploaded image from storage")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Thumbnail Management")]
+        [global::Xunit.TraitAttribute("Description", "Delete uploaded image from storage")]
+        public async global::System.Threading.Tasks.Task DeleteUploadedImageFromStorage()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
-            string pickleIndex = "2";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Reject update when title is empty", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string pickleIndex = "4";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Delete uploaded image from storage", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 28
+#line 29
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -259,52 +301,17 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 29
-    await testRunner.GivenAsync("an existing game in the catalogue", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
-#line hidden
 #line 30
-    await testRunner.WhenAsync("I update the game with an empty title", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.GivenAsync("an uploaded image \"temporary.png\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 31
-    await testRunner.ThenAsync("the response status code should be 400", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.WhenAsync("I delete the image by its ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 32
-    await testRunner.AndAsync("the error code should be \"GameTitle.Empty\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("the response status code should be 204", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-            }
-            await this.ScenarioCleanupAsync();
-        }
-        
-        [global::Xunit.SkippableFactAttribute(DisplayName="Update a non-existent game ID returns 404")]
-        [global::Xunit.TraitAttribute("FeatureTitle", "Game Update")]
-        [global::Xunit.TraitAttribute("Description", "Update a non-existent game ID returns 404")]
-        public async global::System.Threading.Tasks.Task UpdateANon_ExistentGameIDReturns404()
-        {
-            string[] tagsOfScenario = ((string[])(null));
-            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
-            string pickleIndex = "3";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Update a non-existent game ID returns 404", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
-            string[] tagsOfRule = ((string[])(null));
-            global::Reqnroll.RuleInfo ruleInfo = null;
-#line 34
-this.ScenarioInitialize(scenarioInfo, ruleInfo);
-#line hidden
-            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
-            {
-                await testRunner.SkipScenarioAsync();
-            }
-            else
-            {
-                await this.ScenarioStartAsync();
-#line 35
-    await testRunner.WhenAsync("I update a game with ID \"00000000-0000-0000-0000-000000009999\" with valid details" +
-                        "", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
-#line 36
-    await testRunner.ThenAsync("the response status code should be 404", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-#line 37
-    await testRunner.AndAsync("the error code should be \"VideoGame.NotFound\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 33
+    await testRunner.AndAsync("requesting the deleted image should return 404", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -317,12 +324,12 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             
             async global::System.Threading.Tasks.Task global::Xunit.IAsyncLifetime.InitializeAsync()
             {
-                await GameUpdateFeature.FeatureSetupAsync();
+                await GameThumbnailManagementFeature.FeatureSetupAsync();
             }
             
             async global::System.Threading.Tasks.Task global::Xunit.IAsyncLifetime.DisposeAsync()
             {
-                await GameUpdateFeature.FeatureTearDownAsync();
+                await GameThumbnailManagementFeature.FeatureTearDownAsync();
             }
         }
     }

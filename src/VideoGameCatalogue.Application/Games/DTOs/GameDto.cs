@@ -11,7 +11,9 @@ public record GameDto(
     string Rating,
     string Description,
     DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc)
+    DateTime? UpdatedAtUtc,
+    string? ImageId = null,
+    string? ImageUrl = null)
 {
     public static GameDto FromDomain(VideoGame game) => new(
         game.Id,
@@ -22,5 +24,7 @@ public record GameDto(
         game.Rating.Value,
         game.Description,
         game.CreatedAtUtc,
-        game.UpdatedAtUtc);
+        game.UpdatedAtUtc,
+        game.ImageId,
+        game.ImageId != null ? $"/api/images/{game.ImageId}" : null);
 }

@@ -29,6 +29,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<VideoGameCatalogueDbContext>();
         await context.Database.EnsureCreatedAsync(cancellationToken);
+        await DatabaseSeeder.MigrateSchemaAsync(context, cancellationToken);
         await context.VideoGames.ExecuteDeleteAsync(cancellationToken);
         await DatabaseSeeder.SeedAsync(context, cancellationToken);
     }

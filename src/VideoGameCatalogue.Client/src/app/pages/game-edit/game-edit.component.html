@@ -65,6 +65,64 @@
               }
             </div>
 
+            <!-- Thumbnail Image Section -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Thumbnail Image <span class="text-muted fw-normal">(Optional)</span></label>
+              <div class="d-flex align-items-center gap-4 p-3 border rounded bg-light-subtle">
+                <!-- Preview or Placeholder -->
+                <div class="flex-shrink-0">
+                  @if (imagePreviewUrl()) {
+                    <img
+                      [src]="imagePreviewUrl()"
+                      alt="Game thumbnail preview"
+                      class="rounded object-fit-cover shadow-sm border"
+                      style="width: 80px; height: 80px;"
+                    />
+                  } @else {
+                    <div
+                      class="rounded bg-secondary-subtle text-secondary border d-flex flex-column align-items-center justify-content-center shadow-sm"
+                      style="width: 80px; height: 80px;"
+                    >
+                      <span class="fw-bold fs-5">{{ getInitials(gameForm.get('title')?.value || '') }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Upload Controls -->
+                <div class="flex-grow-1">
+                  <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <label class="btn btn-outline-primary btn-sm mb-0">
+                      <input
+                        #fileInput
+                        type="file"
+                        class="d-none"
+                        accept="image/jpeg,image/png,image/webp"
+                        (change)="onFileSelected($event)"
+                        [disabled]="isSaving() || isDeleting()"
+                      />
+                      {{ imagePreviewUrl() ? 'Change Image' : 'Select Image' }}
+                    </label>
+                    @if (imagePreviewUrl()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="onRemoveImage()"
+                        [disabled]="isSaving() || isDeleting()"
+                      >
+                        Remove Image
+                      </button>
+                    }
+                  </div>
+                  <div class="form-text small mb-0">
+                    Accepted formats: JPEG, PNG, WebP (Max 10 MB). Optimized and saved as a thumbnail.
+                  </div>
+                  @if (imageError()) {
+                    <div class="text-danger small mt-1">{{ imageError() }}</div>
+                  }
+                </div>
+              </div>
+            </div>
+
             <!-- Platform & Genre Row -->
             <div class="row g-3 mb-3">
               <div class="col-md-6">

@@ -49,8 +49,35 @@ public static class DatabaseSeeder
 
     public static async Task SeedAsync(VideoGameCatalogueDbContext context, CancellationToken cancellationToken = default)
     {
+        await MigrateSchemaAsync(context, cancellationToken);
         await SeedLookupsAsync(context, cancellationToken);
         await SeedGamesAsync(context, cancellationToken);
+    }
+
+    public static async Task MigrateSchemaAsync(VideoGameCatalogueDbContext context, CancellationToken cancellationToken = default)
+    {
+        if (context.Database.IsRelational())
+        {
+            await context.Database.ExecuteSqlRawAsync(@"
+                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'VideoGames')
+                AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('VideoGames') AND name = 'ImageId')
+                BEGIN
+                    ALTER TABLE [VideoGames] ADD [ImageId] NVARCHAR(100) NULL;
+                END", cancellationToken);
+        }
+    }
+
+    public static void MigrateSchema(VideoGameCatalogueDbContext context)
+    {
+        if (context.Database.IsRelational())
+        {
+            context.Database.ExecuteSqlRaw(@"
+                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'VideoGames')
+                AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('VideoGames') AND name = 'ImageId')
+                BEGIN
+                    ALTER TABLE [VideoGames] ADD [ImageId] NVARCHAR(100) NULL;
+                END");
+        }
     }
 
     private static async Task SeedLookupsAsync(VideoGameCatalogueDbContext context, CancellationToken cancellationToken)

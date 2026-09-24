@@ -22,6 +22,7 @@ public class VideoGame
     public ReleaseYear ReleaseYear { get; private set; }
     public Rating Rating { get; private set; }
     public string Description { get; private set; } = string.Empty;
+    public string? ImageId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
 
@@ -41,7 +42,8 @@ public class VideoGame
         ReleaseYear releaseYear,
         Rating rating,
         string description,
-        DateTime createdAtUtc)
+        DateTime createdAtUtc,
+        string? imageId = null)
     {
         Id = id;
         Title = title;
@@ -51,6 +53,7 @@ public class VideoGame
         Rating = rating;
         Description = description.Trim();
         CreatedAtUtc = createdAtUtc;
+        ImageId = imageId;
     }
 
     /// <summary>
@@ -63,9 +66,10 @@ public class VideoGame
         ReleaseYear releaseYear,
         Rating rating,
         string? description = null,
-        DateTime? createdAtUtc = null)
+        DateTime? createdAtUtc = null,
+        string? imageId = null)
     {
-        return Create(Guid.NewGuid(), title, platform, genre, releaseYear, rating, description, createdAtUtc);
+        return Create(Guid.NewGuid(), title, platform, genre, releaseYear, rating, description, createdAtUtc, imageId);
     }
 
     /// <summary>
@@ -81,10 +85,14 @@ public class VideoGame
         ReleaseYear releaseYear,
         Rating rating,
         string? description = null,
-        DateTime? createdAtUtc = null)
+        DateTime? createdAtUtc = null,
+        string? imageId = null)
     {
         if (id == Guid.Empty)
             return Result<VideoGame>.Failure(GameErrors.InvalidId);
+
+        if (!IsValidImageId(imageId))
+            return Result<VideoGame>.Failure(GameErrors.InvalidImageId);
 
         var timestamp = createdAtUtc ?? TimeProvider.System.GetUtcNow().UtcDateTime;
 
@@ -96,7 +104,8 @@ public class VideoGame
             releaseYear,
             rating,
             description ?? string.Empty,
-            timestamp);
+            timestamp,
+            imageId?.Trim());
 
         return Result<VideoGame>.Success(game);
     }
@@ -111,8 +120,12 @@ public class VideoGame
         ReleaseYear releaseYear,
         Rating rating,
         string? description = null,
-        DateTime? updatedAtUtc = null)
+        DateTime? updatedAtUtc = null,
+        string? imageId = null)
     {
+        if (!IsValidImageId(imageId))
+            return Result.Failure(GameErrors.InvalidImageId);
+
         Title = title;
         Platform = platform;
         Genre = genre;
@@ -120,7 +133,40 @@ public class VideoGame
         Rating = rating;
         Description = (description ?? string.Empty).Trim();
         UpdatedAtUtc = updatedAtUtc ?? TimeProvider.System.GetUtcNow().UtcDateTime;
+        ImageId = imageId?.Trim();
 
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Updates the image identifier associated with this game.
+    /// </summary>
+    public Result SetImage(string? imageId)
+    {
+        if (!IsValidImageId(imageId))
+            return Result.Failure(GameErrors.InvalidImageId);
+
+        ImageId = imageId?.Trim();
+        UpdatedAtUtc = TimeProvider.System.GetUtcNow().UtcDateTime;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Removes the image association from this game.
+    /// </summary>
+    public void RemoveImage()
+    {
+        ImageId = null;
+        UpdatedAtUtc = TimeProvider.System.GetUtcNow().UtcDateTime;
+    }
+
+    private static bool IsValidImageId(string? imageId)
+    {
+        if (string.IsNullOrWhiteSpace(imageId))
+            return true;
+
+        return !imageId.Contains('/') &&
+               !imageId.Contains('\\') &&
+               !imageId.Contains("..");
     }
 }
