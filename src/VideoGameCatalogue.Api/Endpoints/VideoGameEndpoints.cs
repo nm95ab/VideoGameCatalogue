@@ -110,7 +110,8 @@ public static class VideoGameEndpoints
             {
                 Title = "Resource Not Found",
                 Detail = error.Description,
-                Status = StatusCodes.Status404NotFound
+                Status = StatusCodes.Status404NotFound,
+                Extensions = { ["errorCode"] = error.Code }
             });
         }
 

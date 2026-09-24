@@ -6,6 +6,7 @@
     <Project Path="src/VideoGameCatalogue.Infrastructure/VideoGameCatalogue.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/VideoGameCatalogue.AcceptanceTests/VideoGameCatalogue.AcceptanceTests.csproj" />
     <Project Path="tests/VideoGameCatalogue.UnitTests/VideoGameCatalogue.UnitTests.csproj" />
   </Folder>
 </Solution>
