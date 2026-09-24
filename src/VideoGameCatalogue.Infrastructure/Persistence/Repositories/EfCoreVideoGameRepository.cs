@@ -18,24 +18,24 @@ public class EfCoreVideoGameRepository(VideoGameCatalogueDbContext context) : IV
         {
             var search = searchTerm.Trim();
             query = query.Where(g =>
-                EF.Functions.Like(g.Title.Value, $"%{search}%") ||
+                EF.Functions.Like((string)(object)g.Title, $"%{search}%") ||
                 EF.Functions.Like(g.Description, $"%{search}%"));
         }
 
         if (!string.IsNullOrWhiteSpace(platform))
         {
             var targetPlatform = platform.Trim();
-            query = query.Where(g => g.Platform.Value == targetPlatform);
+            query = query.Where(g => (string)(object)g.Platform == targetPlatform);
         }
 
         if (!string.IsNullOrWhiteSpace(genre))
         {
             var targetGenre = genre.Trim();
-            query = query.Where(g => g.Genre.Value == targetGenre);
+            query = query.Where(g => (string)(object)g.Genre == targetGenre);
         }
 
         return await query
-            .OrderBy(g => g.Title.Value)
+            .OrderBy(g => (string)(object)g.Title)
             .ToListAsync(cancellationToken);
     }
 
