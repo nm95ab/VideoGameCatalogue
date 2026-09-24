@@ -13,11 +13,12 @@ namespace VideoGameCatalogue.UnitTests.Application;
 public class VideoGameServiceTests
 {
     private readonly IVideoGameRepository _repository = Substitute.For<IVideoGameRepository>();
+    private readonly ILookupRepository _lookupRepository = Substitute.For<ILookupRepository>();
     private readonly VideoGameService _service;
 
     public VideoGameServiceTests()
     {
-        _service = new VideoGameService(_repository);
+        _service = new VideoGameService(_repository, _lookupRepository);
     }
 
     private static VideoGame CreateSampleGame(string title = "Chrono Trigger", int year = 1995)
@@ -288,16 +289,22 @@ public class VideoGameServiceTests
     }
 
     [Fact]
-    public void GetMetadata_ShouldReturnPopulatedPlatformsGenresAndRatings()
+    public async Task GetMetadataAsync_ShouldReturnPlatformsGenresAndRatingsFromLookupRepository()
     {
+        // Arrange
+        _lookupRepository.GetPlatformsAsync(Arg.Any<CancellationToken>())
+            .Returns(["PC", "PlayStation 5"]);
+        _lookupRepository.GetGenresAsync(Arg.Any<CancellationToken>())
+            .Returns(["Action", "Role-Playing (RPG)"]);
+        _lookupRepository.GetRatingsAsync(Arg.Any<CancellationToken>())
+            .Returns(["Everyone", "Mature 17+"]);
+
         // Act
-        var metadata = _service.GetMetadata();
+        var metadata = await _service.GetMetadataAsync(CancellationToken.None);
 
         // Assert
-        metadata.Platforms.Should().NotBeEmpty();
-        metadata.Genres.Should().NotBeEmpty();
-        metadata.Ratings.Should().NotBeEmpty();
-        metadata.Platforms.Should().Contain("PlayStation 5");
-        metadata.Ratings.Should().Contain("Mature 17+");
+        metadata.Platforms.Should().Equal("PC", "PlayStation 5");
+        metadata.Genres.Should().Equal("Action", "Role-Playing (RPG)");
+        metadata.Ratings.Should().Equal("Everyone", "Mature 17+");
     }
 }

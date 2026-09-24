@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using VideoGameCatalogue.Api.Endpoints;
 using VideoGameCatalogue.Application;
 using VideoGameCatalogue.Infrastructure;
@@ -30,8 +31,25 @@ app.UseCors(angularCorsPolicy);
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<VideoGameCatalogueDbContext>();
-    await context.Database.EnsureCreatedAsync();
+    await EnsureDatabaseInitializedAsync(context);
     await DatabaseSeeder.SeedAsync(context);
+}
+
+static async Task EnsureDatabaseInitializedAsync(VideoGameCatalogueDbContext context)
+{
+    await context.Database.EnsureCreatedAsync();
+    if (!context.Database.IsRelational())
+        return;
+
+    try
+    {
+        await context.Database.ExecuteSqlRawAsync("SELECT TOP 1 1 FROM Platforms");
+    }
+    catch
+    {
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.EnsureCreatedAsync();
+    }
 }
 
 // Map Endpoints

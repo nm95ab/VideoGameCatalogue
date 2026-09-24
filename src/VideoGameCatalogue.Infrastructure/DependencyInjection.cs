@@ -36,6 +36,7 @@ public static class DependencyInjection
         }
 
         services.AddScoped<IVideoGameRepository, EfCoreVideoGameRepository>();
+        services.AddScoped<ILookupRepository, EfCoreLookupRepository>();
 
         return services;
     }

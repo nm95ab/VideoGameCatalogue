@@ -107,9 +107,9 @@ The `VideoGameCatalogue.Application` project coordinates domain models to fulfil
     - `UpdateGameAsync(id, dto, ct)`
     - `DeleteGameAsync(id, ct)`
     - `GetMetadataAsync(ct)`
-- **Driven Port**: `IVideoGameRepository`
-  - Resides in the Domain/Application boundary.
-  - Abstract data access interface requiring no knowledge of EF Core, SQL Server, or relational structures.
+- **Driven Ports**:
+  - `IVideoGameRepository`: Resides in the Domain/Application boundary. Abstract data access interface for the VideoGame Aggregate Root.
+  - `ILookupRepository`: Resides in the Domain/Application boundary. Abstract interface for querying catalogue lookup tables (`Platforms`, `Genres`, `Ratings`).
 
 ### 4.2 Data Transfer Objects (DTOs)
 DTOs isolate external contracts from internal entity structures:

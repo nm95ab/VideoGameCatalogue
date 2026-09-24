@@ -16,47 +16,8 @@ namespace VideoGameCatalogue.Application.Games;
 /// 4. Projecting domain entities into presentation-agnostic <see cref="GameDto"/> records.
 /// </para>
 /// </summary>
-public class VideoGameService(IVideoGameRepository repository) : IVideoGameService
+public class VideoGameService(IVideoGameRepository repository, ILookupRepository lookupRepository) : IVideoGameService
 {
-    private static readonly string[] PredefinedPlatforms =
-    [
-        "PC",
-        "PlayStation 5",
-        "PlayStation 4",
-        "Xbox Series X/S",
-        "Xbox One",
-        "Nintendo Switch",
-        "Nintendo 64",
-        "SNES",
-        "NES",
-        "Sega Genesis"
-    ];
-
-    private static readonly string[] PredefinedGenres =
-    [
-        "Action",
-        "Action-Adventure",
-        "Role-Playing (RPG)",
-        "Strategy",
-        "Platformer",
-        "Shooter",
-        "Simulation",
-        "Sports",
-        "Racing",
-        "Fighting",
-        "Puzzle",
-        "Survival Horror"
-    ];
-
-    private static readonly string[] PredefinedRatings =
-    [
-        "Everyone",
-        "Everyone 10+",
-        "Teen",
-        "Mature 17+",
-        "Adults Only 18+",
-        "Rating Pending"
-    ];
 
     public async Task<IReadOnlyList<GameDto>> GetAllGamesAsync(
         string? searchTerm = null,
@@ -135,10 +96,14 @@ public class VideoGameService(IVideoGameRepository repository) : IVideoGameServi
         return Result.Success();
     }
 
-    public CatalogueMetadataDto GetMetadata() => new(
-        PredefinedPlatforms,
-        PredefinedGenres,
-        PredefinedRatings);
+    public async Task<CatalogueMetadataDto> GetMetadataAsync(CancellationToken cancellationToken = default)
+    {
+        var platforms = await lookupRepository.GetPlatformsAsync(cancellationToken);
+        var genres = await lookupRepository.GetGenresAsync(cancellationToken);
+        var ratings = await lookupRepository.GetRatingsAsync(cancellationToken);
+
+        return new CatalogueMetadataDto(platforms, genres, ratings);
+    }
 
     /// <summary>
     /// Validates and parses raw DTO primitives into domain Value Objects.

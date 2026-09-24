@@ -41,10 +41,12 @@ public static class VideoGameEndpoints
         return TypedResults.Ok(games);
     }
 
-    private static Ok<CatalogueMetadataDto> GetMetadata(
-        [FromServices] IVideoGameService service)
+    private static async Task<Ok<CatalogueMetadataDto>> GetMetadata(
+        [FromServices] IVideoGameService service,
+        CancellationToken ct)
     {
-        return TypedResults.Ok(service.GetMetadata());
+        var metadata = await service.GetMetadataAsync(ct);
+        return TypedResults.Ok(metadata);
     }
 
     private static async Task<IResult> GetGameById(

@@ -27,5 +27,5 @@ public interface IVideoGameService
 
     Task<Result> DeleteGameAsync(Guid id, CancellationToken cancellationToken = default);
 
-    CatalogueMetadataDto GetMetadata();
+    Task<CatalogueMetadataDto> GetMetadataAsync(CancellationToken cancellationToken = default);
 }

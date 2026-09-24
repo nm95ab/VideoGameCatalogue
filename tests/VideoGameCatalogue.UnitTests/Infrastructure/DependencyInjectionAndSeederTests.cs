@@ -45,6 +45,10 @@ public sealed class DependencyInjectionAndSeederTests
         var repoDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IVideoGameRepository));
         repoDescriptor.Should().NotBeNull();
         repoDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
+
+        var lookupDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ILookupRepository));
+        lookupDescriptor.Should().NotBeNull();
+        lookupDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
     }
 
     [Fact]
@@ -65,10 +69,14 @@ public sealed class DependencyInjectionAndSeederTests
         var repoDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IVideoGameRepository));
         repoDescriptor.Should().NotBeNull();
         repoDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
+
+        var lookupDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ILookupRepository));
+        lookupDescriptor.Should().NotBeNull();
+        lookupDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
     }
 
     [Fact]
-    public async Task DatabaseSeeder_SeedsGames_WhenEmpty_AndSkips_WhenAlreadySeeded()
+    public async Task DatabaseSeeder_SeedsGamesAndLookups_WhenEmpty_AndSkips_WhenAlreadySeeded()
     {
         var connectionString = "Server=127.0.0.1,1433;Database=VideoGameCatalogueSeederTestsDb;User Id=sa;Password=YourStrong@Password123!;TrustServerCertificate=True;MultipleActiveResultSets=true;Connect Timeout=15";
         var options = new DbContextOptionsBuilder<VideoGameCatalogueDbContext>()
@@ -76,18 +84,28 @@ public sealed class DependencyInjectionAndSeederTests
             .Options;
 
         using var context = new VideoGameCatalogueDbContext(options);
+        await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
-        await context.VideoGames.ExecuteDeleteAsync();
 
         // Act 1: Initial seed on empty database
         await DatabaseSeeder.SeedAsync(context);
         var countAfterFirstSeed = await context.VideoGames.CountAsync();
         countAfterFirstSeed.Should().Be(8);
 
-        // Act 2: Second run should skip seeding
+        var platformCount = await context.Platforms.CountAsync();
+        platformCount.Should().Be(10);
+        var genreCount = await context.Genres.CountAsync();
+        genreCount.Should().Be(12);
+        var ratingCount = await context.Ratings.CountAsync();
+        ratingCount.Should().Be(6);
+
+        // Act 2: Second run should skip seeding without duplicate key violations
         await DatabaseSeeder.SeedAsync(context);
         var countAfterSecondSeed = await context.VideoGames.CountAsync();
         countAfterSecondSeed.Should().Be(8);
+        (await context.Platforms.CountAsync()).Should().Be(10);
+        (await context.Genres.CountAsync()).Should().Be(12);
+        (await context.Ratings.CountAsync()).Should().Be(6);
 
         await context.Database.EnsureDeletedAsync();
     }

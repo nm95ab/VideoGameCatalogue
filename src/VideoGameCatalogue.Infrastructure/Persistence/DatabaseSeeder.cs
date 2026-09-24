@@ -1,12 +1,90 @@
 using Microsoft.EntityFrameworkCore;
 using VideoGameCatalogue.Domain.Games;
 using VideoGameCatalogue.Domain.Games.ValueObjects;
+using VideoGameCatalogue.Domain.Lookups;
 
 namespace VideoGameCatalogue.Infrastructure.Persistence;
 
 public static class DatabaseSeeder
 {
+    private static readonly string[] InitialPlatforms =
+    [
+        "PC",
+        "PlayStation 5",
+        "PlayStation 4",
+        "Xbox Series X/S",
+        "Xbox One",
+        "Nintendo Switch",
+        "Nintendo 64",
+        "SNES",
+        "NES",
+        "Sega Genesis"
+    ];
+
+    private static readonly string[] InitialGenres =
+    [
+        "Action",
+        "Action-Adventure",
+        "Role-Playing (RPG)",
+        "Strategy",
+        "Platformer",
+        "Shooter",
+        "Simulation",
+        "Sports",
+        "Racing",
+        "Fighting",
+        "Puzzle",
+        "Survival Horror"
+    ];
+
+    private static readonly string[] InitialRatings =
+    [
+        "Everyone",
+        "Everyone 10+",
+        "Teen",
+        "Mature 17+",
+        "Adults Only 18+",
+        "Rating Pending"
+    ];
+
     public static async Task SeedAsync(VideoGameCatalogueDbContext context, CancellationToken cancellationToken = default)
+    {
+        await SeedLookupsAsync(context, cancellationToken);
+        await SeedGamesAsync(context, cancellationToken);
+    }
+
+    private static async Task SeedLookupsAsync(VideoGameCatalogueDbContext context, CancellationToken cancellationToken)
+    {
+        var hasChanges = false;
+
+        if (!await context.Platforms.AnyAsync(cancellationToken))
+        {
+            var platforms = InitialPlatforms.Select(p => new PlatformLookup(p));
+            await context.Platforms.AddRangeAsync(platforms, cancellationToken);
+            hasChanges = true;
+        }
+
+        if (!await context.Genres.AnyAsync(cancellationToken))
+        {
+            var genres = InitialGenres.Select(g => new GenreLookup(g));
+            await context.Genres.AddRangeAsync(genres, cancellationToken);
+            hasChanges = true;
+        }
+
+        if (!await context.Ratings.AnyAsync(cancellationToken))
+        {
+            var ratings = InitialRatings.Select(r => new RatingLookup(r));
+            await context.Ratings.AddRangeAsync(ratings, cancellationToken);
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private static async Task SeedGamesAsync(VideoGameCatalogueDbContext context, CancellationToken cancellationToken)
     {
         if (await context.VideoGames.AnyAsync(cancellationToken))
             return;
