@@ -38,11 +38,32 @@ VideoGameCatalogue/
 
 ---
 
-## Getting Started
+## 🚀 Quick Start (One Command)
+
+Clone the repository and run the automated bootstrap script. It will verify your toolchain, start SQL Server in Docker (or fall back to In-Memory if Docker is offline), install dependencies, compile the solution, start both the backend API and Angular frontend, and open your browser:
+
+### On macOS / Linux:
+```bash
+git clone https://github.com/<org>/VideoGameCatalogue.git
+cd VideoGameCatalogue
+./run.sh
+```
+
+### On Windows (PowerShell):
+```powershell
+git clone https://github.com/<org>/VideoGameCatalogue.git
+cd VideoGameCatalogue
+.\run.ps1
+```
+
+---
+
+## Getting Started (Manual Steps)
 
 ### Prerequisites
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Node.js](https://nodejs.org/) (v20+ or v26)
+- [Node.js](https://nodejs.org/) (v20+ or v22)
+- [Docker Desktop](https://www.docker.com/) (Optional: for local SQL Server container)
 
 ### 1. Run Backend Unit Tests (TDD Verification)
 ```bash
