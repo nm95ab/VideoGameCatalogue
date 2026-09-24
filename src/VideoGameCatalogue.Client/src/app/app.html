@@ -1,0 +1,26 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" routerLink="/games">
+      <span class="fs-4">🎮</span>
+      <span>Video Game Catalogue</span>
+    </a>
+    <div class="navbar-nav ms-auto d-flex flex-row gap-3">
+      <a class="nav-link" routerLink="/games" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        Catalogue
+      </a>
+      <a class="nav-link" routerLink="/games/new" routerLinkActive="active">
+        Add Game
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="bg-light border-top py-3 mt-5 text-center text-muted small">
+  <div class="container">
+    <p class="mb-0">Video Game Catalogue &bull; Clean Architecture &bull; Angular &amp; ASP.NET Core</p>
+  </div>
+</footer>

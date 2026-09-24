@@ -1,0 +1,178 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h2 mb-1">Video Game Catalogue</h1>
+    <p class="text-muted mb-0">Browse, filter, and manage video game entries.</p>
+  </div>
+  <button class="btn btn-primary d-flex align-items-center gap-2" (click)="navigateToAdd()">
+    <i class="bi bi-plus-circle"></i> Add New Game
+  </button>
+</div>
+
+<!-- Alerts -->
+@if (successMessage()) {
+  <ngb-alert type="success" (closed)="successMessage.set(null)" class="mb-3">
+    {{ successMessage() }}
+  </ngb-alert>
+}
+
+@if (errorMessage()) {
+  <ngb-alert type="danger" (closed)="errorMessage.set(null)" class="mb-3">
+    {{ errorMessage() }}
+  </ngb-alert>
+}
+
+<!-- Filters Section -->
+<div class="card mb-4 shadow-sm border-0 bg-light">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-5">
+        <label for="searchInput" class="form-label small fw-semibold text-uppercase text-muted">Search</label>
+        <input
+          id="searchInput"
+          type="text"
+          class="form-control"
+          placeholder="Search by title or description..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onFilterChange()"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <label for="platformFilter" class="form-label small fw-semibold text-uppercase text-muted">Platform</label>
+        <select
+          id="platformFilter"
+          class="form-select"
+          [(ngModel)]="selectedPlatform"
+          (ngModelChange)="onFilterChange()"
+        >
+          <option value="">All Platforms</option>
+          @for (platform of platforms(); track platform) {
+            <option [value]="platform">{{ platform }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label for="genreFilter" class="form-label small fw-semibold text-uppercase text-muted">Genre</label>
+        <select
+          id="genreFilter"
+          class="form-select"
+          [(ngModel)]="selectedGenre"
+          (ngModelChange)="onFilterChange()"
+        >
+          <option value="">All Genres</option>
+          @for (genre of genres(); track genre) {
+            <option [value]="genre">{{ genre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-md-1 d-flex align-items-end">
+        <button class="btn btn-outline-secondary w-100" (click)="resetFilters()" title="Reset all filters">
+          Reset
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+@if (isLoading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted mt-2">Loading catalogue entries...</p>
+  </div>
+} @else if (games().length === 0) {
+  <div class="card text-center py-5 shadow-sm border-0">
+    <div class="card-body">
+      <h4 class="card-title text-muted">No Video Games Found</h4>
+      <p class="card-text text-muted">Try adjusting your search criteria or add a new game to the catalogue.</p>
+      <button class="btn btn-primary" (click)="navigateToAdd()">Add First Game</button>
+    </div>
+  </div>
+} @else {
+  <!-- Games Table -->
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th scope="col" style="min-width: 220px;">Title</th>
+            <th scope="col">Platform</th>
+            <th scope="col">Genre</th>
+            <th scope="col">Release Year</th>
+            <th scope="col">ESRB Rating</th>
+            <th scope="col" class="text-end" style="min-width: 140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (game of games(); track game.id) {
+            <tr>
+              <td>
+                <div class="fw-bold text-dark">{{ game.title }}</div>
+                @if (game.description) {
+                  <small class="text-muted d-block text-truncate" style="max-width: 320px;">
+                    {{ game.description }}
+                  </small>
+                }
+              </td>
+              <td>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
+                  {{ game.platform }}
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                  {{ game.genre }}
+                </span>
+              </td>
+              <td>{{ game.releaseYear }}</td>
+              <td>
+                <span class="badge bg-dark-subtle text-dark-emphasis border border-dark-subtle">
+                  {{ game.rating }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  class="btn btn-sm btn-outline-primary me-2"
+                  (click)="navigateToEdit(game.id)"
+                  title="Edit entry"
+                >
+                  Edit
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="openDeleteModal(deleteModal, game)"
+                  title="Delete entry"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-white text-muted small d-flex justify-content-between align-items-center py-3">
+      <span>Showing {{ games().length }} game{{ games().length === 1 ? '' : 's' }}</span>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+<ng-template #deleteModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="modal-title">Confirm Deletion</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <p>Are you sure you want to delete this game entry from the catalogue?</p>
+    <p class="text-danger small mb-0">This action cannot be undone.</p>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Cancel</button>
+    <button type="button" class="btn btn-danger" (click)="modal.close('confirm')">Delete Game</button>
+  </div>
+</ng-template>

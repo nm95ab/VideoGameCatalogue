@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\VideoGameCatalogue.Infrastructure\VideoGameCatalogue.Infrastructure.csproj" />
+    <ProjectReference Include="..\VideoGameCatalogue.Application\VideoGameCatalogue.Application.csproj" />
+    <ProjectReference Include="..\VideoGameCatalogue.Domain\VideoGameCatalogue.Domain.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

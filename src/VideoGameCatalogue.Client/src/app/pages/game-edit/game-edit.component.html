@@ -1,0 +1,193 @@
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <!-- Back Navigation -->
+    <div class="mb-3">
+      <a routerLink="/games" class="text-decoration-none text-muted d-inline-flex align-items-center gap-1">
+        &larr; Back to Catalogue
+      </a>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-4">
+      <h1 class="h2 mb-1">{{ isEditMode ? 'Edit Video Game' : 'Add New Video Game' }}</h1>
+      <p class="text-muted">
+        {{ isEditMode ? 'Update the details for this video game entry.' : 'Fill in the details to add a new game to the catalogue.' }}
+      </p>
+    </div>
+
+    <!-- Error Alert -->
+    @if (errorMessage()) {
+      <ngb-alert type="danger" (closed)="errorMessage.set(null)" class="mb-4">
+        {{ errorMessage() }}
+      </ngb-alert>
+    }
+
+    <!-- Loading State for Edit Mode -->
+    @if (isLoading()) {
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted mt-2">Loading game details...</p>
+      </div>
+    } @else {
+      <!-- Edit/Create Form Card -->
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <form [formGroup]="gameForm" (ngSubmit)="onSubmit()" novalidate>
+            <!-- Title -->
+            <div class="mb-3">
+              <label for="title" class="form-label fw-semibold">
+                Game Title <span class="text-danger">*</span>
+              </label>
+              <input
+                id="title"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('title')"
+                formControlName="title"
+                placeholder="e.g., The Witcher 3: Wild Hunt"
+              />
+              @if (isFieldInvalid('title')) {
+                <div class="invalid-feedback">
+                  @if (gameForm.get('title')?.errors?.['required']) {
+                    Game title is required.
+                  }
+                  @if (gameForm.get('title')?.errors?.['maxlength']) {
+                    Game title cannot exceed 150 characters.
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Platform & Genre Row -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="platform" class="form-label fw-semibold">
+                  Platform <span class="text-danger">*</span>
+                </label>
+                <select
+                  id="platform"
+                  class="form-select"
+                  [class.is-invalid]="isFieldInvalid('platform')"
+                  formControlName="platform"
+                >
+                  <option value="" disabled>Select a platform</option>
+                  @for (platform of platforms(); track platform) {
+                    <option [value]="platform">{{ platform }}</option>
+                  }
+                </select>
+                @if (isFieldInvalid('platform')) {
+                  <div class="invalid-feedback">Platform is required.</div>
+                }
+              </div>
+
+              <div class="col-md-6">
+                <label for="genre" class="form-label fw-semibold">
+                  Genre <span class="text-danger">*</span>
+                </label>
+                <select
+                  id="genre"
+                  class="form-select"
+                  [class.is-invalid]="isFieldInvalid('genre')"
+                  formControlName="genre"
+                >
+                  <option value="" disabled>Select a genre</option>
+                  @for (genre of genres(); track genre) {
+                    <option [value]="genre">{{ genre }}</option>
+                  }
+                </select>
+                @if (isFieldInvalid('genre')) {
+                  <div class="invalid-feedback">Genre is required.</div>
+                }
+              </div>
+            </div>
+
+            <!-- Release Year & Rating Row -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="releaseYear" class="form-label fw-semibold">
+                  Release Year <span class="text-danger">*</span>
+                </label>
+                <input
+                  id="releaseYear"
+                  type="number"
+                  class="form-control"
+                  [class.is-invalid]="isFieldInvalid('releaseYear')"
+                  formControlName="releaseYear"
+                  placeholder="e.g., 2015"
+                />
+                @if (isFieldInvalid('releaseYear')) {
+                  <div class="invalid-feedback">
+                    Release year must be between 1950 and next year.
+                  </div>
+                }
+              </div>
+
+              <div class="col-md-6">
+                <label for="rating" class="form-label fw-semibold">
+                  ESRB / Age Rating <span class="text-danger">*</span>
+                </label>
+                <select
+                  id="rating"
+                  class="form-select"
+                  [class.is-invalid]="isFieldInvalid('rating')"
+                  formControlName="rating"
+                >
+                  <option value="" disabled>Select rating</option>
+                  @for (rating of ratings(); track rating) {
+                    <option [value]="rating">{{ rating }}</option>
+                  }
+                </select>
+                @if (isFieldInvalid('rating')) {
+                  <div class="invalid-feedback">Rating is required.</div>
+                }
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+              <label for="description" class="form-label fw-semibold">Description</label>
+              <textarea
+                id="description"
+                class="form-control"
+                rows="4"
+                [class.is-invalid]="isFieldInvalid('description')"
+                formControlName="description"
+                placeholder="Optional synopsis, key gameplay features, or notes..."
+              ></textarea>
+              @if (isFieldInvalid('description')) {
+                <div class="invalid-feedback">Description cannot exceed 2000 characters.</div>
+              }
+              <div class="form-text">Max 2,000 characters.</div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+              <button
+                type="button"
+                class="btn btn-outline-secondary px-4"
+                (click)="onCancel()"
+                [disabled]="isSaving()"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary px-4 d-flex align-items-center gap-2"
+                [disabled]="isSaving()"
+              >
+                @if (isSaving()) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  Saving...
+                } @else {
+                  {{ isEditMode ? 'Update Game' : 'Create Game' }}
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+  </div>
+</div>

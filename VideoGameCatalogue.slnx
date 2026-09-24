@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VideoGameCatalogue.Api/VideoGameCatalogue.Api.csproj" />
+    <Project Path="src/VideoGameCatalogue.Application/VideoGameCatalogue.Application.csproj" />
+    <Project Path="src/VideoGameCatalogue.Domain/VideoGameCatalogue.Domain.csproj" />
+    <Project Path="src/VideoGameCatalogue.Infrastructure/VideoGameCatalogue.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VideoGameCatalogue.UnitTests/VideoGameCatalogue.UnitTests.csproj" />
+  </Folder>
+</Solution>
