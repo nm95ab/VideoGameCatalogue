@@ -151,21 +151,62 @@ describe('GameService', () => {
     req.flush(null);
   });
 
-  it('should fetch metadata', () => {
+  it('should fetch metadata and cache the result for subsequent calls', () => {
     const mockMeta = {
       platforms: ['PC', 'SNES'],
       genres: ['RPG', 'Action'],
       ratings: ['Everyone', 'Teen']
     };
 
+    let firstCallMeta: any;
+    let secondCallMeta: any;
+
     service.getMetadata().subscribe(meta => {
-      expect(meta.platforms).toContain('PC');
-      expect(meta.genres).toContain('RPG');
+      firstCallMeta = meta;
     });
 
     const req = httpTesting.expectOne('http://localhost:5111/api/games/metadata');
     expect(req.request.method).toBe('GET');
     req.flush(mockMeta);
+
+    expect(firstCallMeta.platforms).toContain('PC');
+
+    // Second call should return cached observable without issuing another HTTP request
+    service.getMetadata().subscribe(meta => {
+      secondCallMeta = meta;
+    });
+
+    httpTesting.expectNone('http://localhost:5111/api/games/metadata');
+    expect(secondCallMeta).toEqual(mockMeta);
+  });
+
+  it('should clear cached metadata on error allowing subsequent retry', () => {
+    let errorReceived = false;
+
+    service.getMetadata().subscribe({
+      error: () => {
+        errorReceived = true;
+      }
+    });
+
+    const failedReq = httpTesting.expectOne('http://localhost:5111/api/games/metadata');
+    failedReq.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+
+    expect(errorReceived).toBe(true);
+
+    // Subsequent call should retry and execute a new HTTP request
+    const retryMeta = { platforms: ['PC'], genres: ['Action'], ratings: ['Everyone'] };
+    let successMeta: any;
+
+    service.getMetadata().subscribe(meta => {
+      successMeta = meta;
+    });
+
+    const retryReq = httpTesting.expectOne('http://localhost:5111/api/games/metadata');
+    expect(retryReq.request.method).toBe('GET');
+    retryReq.flush(retryMeta);
+
+    expect(successMeta).toEqual(retryMeta);
   });
 
   it('should upload image', () => {

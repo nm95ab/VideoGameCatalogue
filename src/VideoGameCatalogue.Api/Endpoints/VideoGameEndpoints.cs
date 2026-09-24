@@ -51,8 +51,10 @@ public static class VideoGameEndpoints
 
     private static async Task<Ok<CatalogueMetadataDto>> GetMetadata(
         [FromServices] IVideoGameService service,
+        HttpContext httpContext,
         CancellationToken ct)
     {
+        httpContext.Response.Headers.CacheControl = "public, max-age=3600";
         var metadata = await service.GetMetadataAsync(ct);
         return TypedResults.Ok(metadata);
     }

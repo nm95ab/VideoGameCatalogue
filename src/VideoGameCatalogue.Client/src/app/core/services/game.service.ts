@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError, shareReplay } from 'rxjs/operators';
 import { CatalogueMetadata, CreateGameRequest, Game, ImageUploadResponse, PagedResult, UpdateGameRequest } from '../models/game.model';
 
 @Injectable({
@@ -13,6 +14,7 @@ export class GameService {
     : 'http://localhost:5111/api';
   private readonly apiUrl = `${this.baseUrl}/games`;
   private readonly imagesUrl = `${this.baseUrl}/images`;
+  private metadata$: Observable<CatalogueMetadata> | null = null;
 
   getGames(searchTerm?: string, platform?: string, genre?: string, page: number = 1, pageSize: number = 6): Observable<PagedResult<Game>> {
     let params = new HttpParams()
@@ -51,7 +53,16 @@ export class GameService {
   }
 
   getMetadata(): Observable<CatalogueMetadata> {
-    return this.http.get<CatalogueMetadata>(`${this.apiUrl}/metadata`);
+    if (!this.metadata$) {
+      this.metadata$ = this.http.get<CatalogueMetadata>(`${this.apiUrl}/metadata`).pipe(
+        shareReplay(1),
+        catchError((err) => {
+          this.metadata$ = null;
+          return throwError(() => err);
+        })
+      );
+    }
+    return this.metadata$;
   }
 
   uploadImage(file: File): Observable<ImageUploadResponse> {

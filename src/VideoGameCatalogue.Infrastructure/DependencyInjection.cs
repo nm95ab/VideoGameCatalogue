@@ -45,8 +45,13 @@ public static class DependencyInjection
                 }));
         }
 
+        services.AddMemoryCache();
         services.AddScoped<IVideoGameRepository, EfCoreVideoGameRepository>();
-        services.AddScoped<ILookupRepository, EfCoreLookupRepository>();
+        services.AddScoped<EfCoreLookupRepository>();
+        services.AddScoped<ILookupRepository>(sp =>
+            new CachedLookupRepository(
+                sp.GetRequiredService<EfCoreLookupRepository>(),
+                sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>()));
 
         services.AddSingleton<IImageThumbnailProcessor, ImageSharpThumbnailProcessor>();
         RegisterImageStorage(services, configuration);
