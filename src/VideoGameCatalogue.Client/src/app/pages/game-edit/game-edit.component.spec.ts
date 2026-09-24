@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { of, throwError } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameEditComponent } from './game-edit.component';
@@ -11,6 +12,7 @@ describe('GameEditComponent', () => {
   let fixture: ComponentFixture<GameEditComponent>;
   let mockGameService: Partial<GameService>;
   let mockRouter: Partial<Router>;
+  let mockModalService: { open: ReturnType<typeof vi.fn> };
 
   const existingGame: Game = {
     id: '11111111-1111-1111-1111-111111111111',
@@ -34,6 +36,7 @@ describe('GameEditComponent', () => {
       getGameById: vi.fn().mockReturnValue(of(existingGame)),
       createGame: vi.fn().mockReturnValue(of(existingGame)),
       updateGame: vi.fn().mockReturnValue(of(existingGame)),
+      deleteGame: vi.fn().mockReturnValue(of(void 0)),
       ...serviceOverrides
     };
 
@@ -41,11 +44,18 @@ describe('GameEditComponent', () => {
       navigate: vi.fn()
     };
 
+    mockModalService = {
+      open: vi.fn().mockReturnValue({
+        result: Promise.resolve('confirm')
+      })
+    };
+
     await TestBed.configureTestingModule({
       imports: [GameEditComponent],
       providers: [
         { provide: GameService, useValue: mockGameService },
         { provide: Router, useValue: mockRouter },
+        { provide: NgbModal, useValue: mockModalService },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -140,6 +150,17 @@ describe('GameEditComponent', () => {
       component.onCancel();
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
     });
+
+    it('should not delete game if gameId is not set', async () => {
+      mockModalService.open.mockReturnValue({
+        result: Promise.resolve('confirm')
+      });
+
+      component.openDeleteModal({});
+      await fixture.whenStable();
+
+      expect(mockGameService.deleteGame).not.toHaveBeenCalled();
+    });
   });
 
   describe('Edit Mode', () => {
@@ -221,6 +242,44 @@ describe('GameEditComponent', () => {
       expect(component.platforms().length).toBeGreaterThan(0);
       expect(component.platforms()).toContain('PC');
       expect(component.genres()).toContain('Action');
+    });
+
+    it('should delete game when modal confirms and navigate to catalogue', async () => {
+      mockModalService.open.mockReturnValue({
+        result: Promise.resolve('confirm')
+      });
+      vi.mocked(mockGameService.deleteGame!).mockReturnValue(of(void 0));
+
+      component.openDeleteModal({});
+      await fixture.whenStable();
+
+      expect(mockGameService.deleteGame).toHaveBeenCalledWith(existingGame.id);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
+    });
+
+    it('should handle delete error when service fails', async () => {
+      mockModalService.open.mockReturnValue({
+        result: Promise.resolve('confirm')
+      });
+      vi.mocked(mockGameService.deleteGame!).mockReturnValue(throwError(() => new Error('Delete failed')));
+
+      component.openDeleteModal({});
+      await fixture.whenStable();
+
+      expect(component.isDeleting()).toBe(false);
+      expect(component.errorMessage()).toBe('Failed to delete video game.');
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+    });
+
+    it('should not delete game when modal is dismissed', async () => {
+      mockModalService.open.mockReturnValue({
+        result: Promise.reject('dismissed')
+      });
+
+      component.openDeleteModal({});
+      await fixture.whenStable();
+
+      expect(mockGameService.deleteGame).not.toHaveBeenCalled();
     });
   });
 });

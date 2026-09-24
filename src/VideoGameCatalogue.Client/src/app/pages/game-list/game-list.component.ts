@@ -6,7 +6,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, merge, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, tap, catchError } from 'rxjs/operators';
 import {
-  NgbModal,
   NgbAlertModule,
   NgbTooltipModule,
   NgbPaginationModule,
@@ -34,7 +33,6 @@ import { Game } from '../../core/models/game.model';
 export class GameListComponent implements OnInit {
   private readonly gameService = inject(GameService);
   private readonly router = inject(Router);
-  private readonly modalService = inject(NgbModal);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly searchSubject = new Subject<string>();
@@ -154,32 +152,5 @@ export class GameListComponent implements OnInit {
 
   navigateToEdit(id: string): void {
     this.router.navigate(['/games', id, 'edit']);
-  }
-
-  openDeleteModal(content: unknown, game: Game): void {
-    this.modalService.open(content, { ariaLabelledBy: 'modal-title' }).result.then(
-      (result) => {
-        if (result === 'confirm') {
-          this.executeDelete(game);
-        }
-      },
-      () => {
-        // dismissed
-      }
-    );
-  }
-
-  private executeDelete(game: Game): void {
-    this.gameService.deleteGame(game.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.successMessage.set(`"${game.title}" was successfully deleted.`);
-          this.loadGames();
-        },
-        error: () => {
-          this.errorMessage.set(`Failed to delete "${game.title}".`);
-        }
-      });
   }
 }

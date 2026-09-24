@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { NgbAlertModule, NgbTooltipModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbAlertModule, NgbTooltipModule, NgbProgressbarModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { GameService } from '../../core/services/game.service';
 import { CreateGameRequest, UpdateGameRequest } from '../../core/models/game.model';
 
@@ -25,6 +25,7 @@ export class GameEditComponent implements OnInit {
   private readonly gameService = inject(GameService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly modalService = inject(NgbModal);
 
   gameForm!: FormGroup;
   gameId: string | null = null;
@@ -32,6 +33,7 @@ export class GameEditComponent implements OnInit {
 
   readonly isLoading = signal<boolean>(false);
   readonly isSaving = signal<boolean>(false);
+  readonly isDeleting = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
 
   readonly platforms = signal<string[]>([]);
@@ -178,5 +180,34 @@ export class GameEditComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/games']);
+  }
+
+  openDeleteModal(content: unknown): void {
+    this.modalService.open(content, { ariaLabelledBy: 'modal-title', centered: true }).result.then(
+      (result) => {
+        if (result === 'confirm' && this.gameId) {
+          this.executeDelete(this.gameId);
+        }
+      },
+      () => {
+        // dismissed
+      }
+    );
+  }
+
+  private executeDelete(id: string): void {
+    this.isDeleting.set(true);
+    this.errorMessage.set(null);
+
+    this.gameService.deleteGame(id).subscribe({
+      next: () => {
+        this.isDeleting.set(false);
+        this.router.navigate(['/games']);
+      },
+      error: () => {
+        this.errorMessage.set('Failed to delete video game.');
+        this.isDeleting.set(false);
+      }
+    });
   }
 }

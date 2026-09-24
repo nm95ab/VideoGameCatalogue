@@ -20,13 +20,4 @@ describe('App Component', () => {
   it('should create the app', () => {
     expect(component).toBeTruthy();
   });
-
-  it('should initialize with navbar collapsed', () => {
-    expect(component.isNavbarCollapsed).toBe(true);
-  });
-
-  it('should toggle navbar collapse state', () => {
-    component.isNavbarCollapsed = false;
-    expect(component.isNavbarCollapsed).toBe(false);
-  });
 });
