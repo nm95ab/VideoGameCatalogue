@@ -38,8 +38,23 @@ Scenario: Search games with combined criteria
     And exactly 1 game should be returned
     And the returned game title should be "Chrono Trigger"
 
+Scenario: Filter games by gaming era
+    Given the catalogue is initialized with default seed data
+    When I filter games by era "4th-gen"
+    Then the response status code should be 200
+    And all returned games should belong to the 4th-gen era
+    And the results should include a game with title "Super Mario World"
+
+Scenario: Filter games by era alias
+    Given the catalogue is initialized with default seed data
+    When I filter games by era "16-bit"
+    Then the response status code should be 200
+    And all returned games should belong to the 4th-gen era
+    And the results should include a game with title "The Legend of Zelda: A Link to the Past"
+
 Scenario: Search games with non-matching term returns empty list
     Given the catalogue is initialized with default seed data
     When I search games by keyword "NonExistentGameXYZ999"
     Then the response status code should be 200
     And exactly 0 games should be returned
+

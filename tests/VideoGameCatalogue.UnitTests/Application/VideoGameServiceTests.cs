@@ -58,6 +58,61 @@ public class VideoGameServiceTests
     }
 
     [Fact]
+    public async Task GetAllGamesAsync_WithEraFilter_ShouldPassEraToRepository()
+    {
+        // Arrange
+        _repository.GetAllAsync(
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            "4th-gen",
+            Arg.Any<CancellationToken>())
+            .Returns([CreateSampleGame("Super Mario World", 1990)]);
+
+        // Act
+        var result = await _service.GetAllGamesAsync(era: "4th-gen", cancellationToken: CancellationToken.None);
+
+        // Assert
+        result.Should().HaveCount(1);
+        await _repository.Received(1).GetAllAsync(
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            "4th-gen",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetGamesAsync_WithEraFilter_ShouldPassEraToRepository()
+    {
+        // Arrange
+        var pagedResult = new PagedResult<VideoGame>([CreateSampleGame("Super Mario World", 1990)], 1, 10, 1);
+        _repository.GetPagedAsync(
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            "4th-gen",
+            1,
+            10,
+            Arg.Any<CancellationToken>()).Returns(pagedResult);
+
+        // Act
+        var result = await _service.GetGamesAsync(era: "4th-gen", pageNumber: 1, pageSize: 10, cancellationToken: CancellationToken.None);
+
+        // Assert
+        result.TotalCount.Should().Be(1);
+        await _repository.Received(1).GetPagedAsync(
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            "4th-gen",
+            1,
+            10,
+            Arg.Any<CancellationToken>());
+    }
+
+
+    [Fact]
     public async Task GetGamesAsync_WithPagination_ShouldReturnMappedPagedResult()
     {
         // Arrange
@@ -341,7 +396,28 @@ public class VideoGameServiceTests
         metadata.Platforms.Should().Equal("PC", "PlayStation 5");
         metadata.Genres.Should().Equal("Action", "Role-Playing (RPG)");
         metadata.Ratings.Should().Equal("Everyone", "Mature 17+");
+        metadata.Eras.Should().NotBeNull();
+        metadata.Eras!.Should().HaveCount(GamingEra.All.Count);
+        metadata.Eras!.Select(e => e.Key).Should().Equal(GamingEra.All.Select(e => e.Key));
+        metadata.Eras!.Select(e => e.Generation).Should().Equal(GamingEra.All.Select(e => e.Generation));
+        metadata.Eras!.Select(e => e.DisplayTitle).Should().Equal(GamingEra.All.Select(e => e.DisplayTitle));
     }
+
+    [Fact]
+    public void EraDto_Properties_ShouldBeRetained()
+    {
+        var dto = new EraDto("key", "gen", "name", "display", "icon", "badge", "desc", 1990, 1995);
+        dto.Key.Should().Be("key");
+        dto.Generation.Should().Be("gen");
+        dto.Name.Should().Be("name");
+        dto.DisplayTitle.Should().Be("display");
+        dto.Icon.Should().Be("icon");
+        dto.BadgeClass.Should().Be("badge");
+        dto.Description.Should().Be("desc");
+        dto.StartYear.Should().Be(1990);
+        dto.EndYear.Should().Be(1995);
+    }
+
 
     [Fact]
     public async Task CreateGameAsync_WithImageId_ShouldSetImageIdAndComputeImageUrl()

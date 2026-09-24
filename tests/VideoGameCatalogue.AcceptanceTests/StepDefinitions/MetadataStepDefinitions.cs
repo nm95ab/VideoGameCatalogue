@@ -36,4 +36,14 @@ public class MetadataStepDefinitions(VideoGameApiDriver driver)
         metadata.Should().NotBeNull();
         metadata!.Ratings.Should().Contain([r1, r2, r3]);
     }
+
+    [Then(@"the metadata should contain eras including ""(.*)"", ""(.*)"", ""(.*)""")]
+    public async Task ThenTheMetadataShouldContainEras(string e1, string e2, string e3)
+    {
+        var metadata = await driver.ReadMetadataAsync();
+        metadata.Should().NotBeNull();
+        metadata!.Eras.Should().NotBeNull();
+        metadata.Eras!.Select(e => e.Name).Should().Contain([e1, e2, e3]);
+    }
 }
+

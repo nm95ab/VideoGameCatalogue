@@ -9,3 +9,4 @@ Scenario: Fetch all catalogue metadata lookup lists
     And the metadata should contain platforms including "PC", "PlayStation 5", "Nintendo Switch"
     And the metadata should contain genres including "Action", "Role-Playing (RPG)", "Platformer"
     And the metadata should contain ratings including "Everyone", "Teen", "Mature 17+"
+    And the metadata should contain eras including "16-Bit Golden Age", "3D Revolution", "Modern Era"

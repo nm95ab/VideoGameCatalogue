@@ -306,6 +306,60 @@ public sealed class EfCoreVideoGameRepositoryTests : IDisposable
         result.Items[0].Title.Value.Should().Be("Super Mario World");
     }
 
+    [Fact]
+    public async Task GetPagedAsync_WithOngoingEraFilter_FiltersByYearGreaterThanOrEqualToStartYear()
+    {
+        // Arrange
+        var retroGame = VideoGame.Create(GameTitle.Create("Super Mario World").Value, Platform.Create("SNES").Value, Genre.Create("Platformer").Value, ReleaseYear.Create(1990).Value, Rating.Create("Everyone").Value).Value;
+        var modernGame = VideoGame.Create(GameTitle.Create("Elden Ring").Value, Platform.Create("PS5").Value, Genre.Create("Action").Value, ReleaseYear.Create(2022).Value, Rating.Create("Mature 17+").Value).Value;
+
+        await _repository.AddAsync(retroGame);
+        await _repository.AddAsync(modernGame);
+
+        // Act - 9th Gen is 2020-null
+        var result = await _repository.GetPagedAsync(era: "9th-gen");
+
+        // Assert
+        result.TotalCount.Should().Be(1);
+        result.Items[0].Title.Value.Should().Be("Elden Ring");
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_WithInvalidEraFilter_IgnoresEraFilter()
+    {
+        // Arrange
+        var retroGame = VideoGame.Create(GameTitle.Create("Super Mario World").Value, Platform.Create("SNES").Value, Genre.Create("Platformer").Value, ReleaseYear.Create(1990).Value, Rating.Create("Everyone").Value).Value;
+        var modernGame = VideoGame.Create(GameTitle.Create("Elden Ring").Value, Platform.Create("PS5").Value, Genre.Create("Action").Value, ReleaseYear.Create(2022).Value, Rating.Create("Mature 17+").Value).Value;
+
+        await _repository.AddAsync(retroGame);
+        await _repository.AddAsync(modernGame);
+
+        // Act
+        var result = await _repository.GetPagedAsync(era: "not-a-valid-era");
+
+        // Assert
+        result.TotalCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithEraFilter_FiltersByEraYears()
+    {
+        // Arrange
+        var retroGame = VideoGame.Create(GameTitle.Create("Super Mario World").Value, Platform.Create("SNES").Value, Genre.Create("Platformer").Value, ReleaseYear.Create(1990).Value, Rating.Create("Everyone").Value).Value;
+        var modernGame = VideoGame.Create(GameTitle.Create("Elden Ring").Value, Platform.Create("PS5").Value, Genre.Create("Action").Value, ReleaseYear.Create(2022).Value, Rating.Create("Mature 17+").Value).Value;
+
+        await _repository.AddAsync(retroGame);
+        await _repository.AddAsync(modernGame);
+
+        // Act
+        var results = await _repository.GetAllAsync(era: "4th-gen");
+
+        // Assert
+        results.Should().HaveCount(1);
+        results[0].Title.Value.Should().Be("Super Mario World");
+    }
+
+
     public void Dispose()
     {
         _context.Dispose();

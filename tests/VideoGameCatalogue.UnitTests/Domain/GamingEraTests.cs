@@ -45,6 +45,41 @@ public class GamingEraTests
     }
 
     [Theory]
+    [InlineData("8-bit", "3rd-gen")]
+    [InlineData("16-bit", "4th-gen")]
+    [InlineData("3d-revolution", "5th-gen")]
+    [InlineData("hd-era", "7th-gen")]
+    [InlineData("modern", "9th-gen")]
+    public void FromKey_WhenGivenAlias_ShouldResolveExpectedEra(string alias, string expectedKey)
+    {
+        // Act
+        var era = GamingEra.FromKey(alias);
+
+        // Assert
+        era.Should().NotBeNull();
+        era!.Value.Key.Should().Be(expectedKey);
+    }
+
+    [Theory]
+    [InlineData("Early Era", "early-arcade")]
+    [InlineData("3rd Gen", "3rd-gen")]
+    [InlineData("4th Gen", "4th-gen")]
+    [InlineData("5th Gen", "5th-gen")]
+    [InlineData("6th Gen", "6th-gen")]
+    [InlineData("7th Gen", "7th-gen")]
+    [InlineData("8th Gen", "8th-gen")]
+    [InlineData("9th Gen", "9th-gen")]
+    public void FromKey_WhenGivenGenerationName_ShouldResolveExpectedEra(string generation, string expectedKey)
+    {
+        // Act
+        var era = GamingEra.FromKey(generation);
+
+        // Assert
+        era.Should().NotBeNull();
+        era!.Value.Key.Should().Be(expectedKey);
+    }
+
+    [Theory]
     [InlineData("invalid-era")]
     [InlineData("")]
     [InlineData(null)]
@@ -56,6 +91,57 @@ public class GamingEraTests
         // Assert
         era.Should().BeNull();
     }
+
+    [Fact]
+    public void DisplayTitle_WhenFiniteEra_ShouldIncludeYearsRange()
+    {
+        // Act
+        var title = GamingEra.FourthGen.DisplayTitle;
+
+        // Assert
+        title.Should().Be("4th Gen: 16-Bit Golden Age (1987–1992)");
+    }
+
+    [Fact]
+    public void DisplayTitle_WhenOngoingEra_ShouldIncludePresent()
+    {
+        // Act
+        var title = GamingEra.NinthGen.DisplayTitle;
+
+        // Assert
+        title.Should().Be("9th Gen: Modern Era (2020–Present)");
+    }
+
+    [Theory]
+    [InlineData(1986, false)]
+    [InlineData(1987, true)]
+    [InlineData(1990, true)]
+    [InlineData(1992, true)]
+    [InlineData(1993, false)]
+    public void Matches_WithBoundedEra_ShouldMatchOnlyWithinRange(int year, bool expectedMatch)
+    {
+        GamingEra.FourthGen.Matches(year).Should().Be(expectedMatch);
+    }
+
+    [Theory]
+    [InlineData(2019, false)]
+    [InlineData(2020, true)]
+    [InlineData(2030, true)]
+    public void Matches_WithOngoingEra_ShouldMatchFromStartYearOnwards(int year, bool expectedMatch)
+    {
+        GamingEra.NinthGen.Matches(year).Should().Be(expectedMatch);
+    }
+
+    [Fact]
+    public void ForYear_WhenYearIsBeforeTrackedEras_ShouldDefaultToNinthGen()
+    {
+        // Act
+        var era = GamingEra.ForYear(1940);
+
+        // Assert
+        era.Should().Be(GamingEra.NinthGen);
+    }
+
 
     [Fact]
     public void All_ShouldContainChronologicallyOrderedErasCovering1950ToPresent()

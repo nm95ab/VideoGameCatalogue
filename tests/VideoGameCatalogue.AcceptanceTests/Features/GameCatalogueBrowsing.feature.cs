@@ -106,7 +106,7 @@ namespace VideoGameCatalogue.AcceptanceTests.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/GameCatalogueBrowsing.feature.ndjson", 8);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/GameCatalogueBrowsing.feature.ndjson", 10);
         }
         
         async global::System.Threading.Tasks.Task global::Xunit.IAsyncLifetime.InitializeAsync()
@@ -336,15 +336,15 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             await this.ScenarioCleanupAsync();
         }
         
-        [global::Xunit.SkippableFactAttribute(DisplayName="Search games with non-matching term returns empty list")]
+        [global::Xunit.SkippableFactAttribute(DisplayName="Filter games by gaming era")]
         [global::Xunit.TraitAttribute("FeatureTitle", "Game Catalogue Browsing and Filtering")]
-        [global::Xunit.TraitAttribute("Description", "Search games with non-matching term returns empty list")]
-        public async global::System.Threading.Tasks.Task SearchGamesWithNon_MatchingTermReturnsEmptyList()
+        [global::Xunit.TraitAttribute("Description", "Filter games by gaming era")]
+        public async global::System.Threading.Tasks.Task FilterGamesByGamingEra()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "5";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Search games with non-matching term returns empty list", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Filter games by gaming era", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
 #line 41
@@ -361,12 +361,93 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.GivenAsync("the catalogue is initialized with default seed data", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 43
-    await testRunner.WhenAsync("I search games by keyword \"NonExistentGameXYZ999\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("I filter games by era \"4th-gen\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 44
     await testRunner.ThenAsync("the response status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 45
+    await testRunner.AndAsync("all returned games should belong to the 4th-gen era", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 46
+    await testRunner.AndAsync("the results should include a game with title \"Super Mario World\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Xunit.SkippableFactAttribute(DisplayName="Filter games by era alias")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Catalogue Browsing and Filtering")]
+        [global::Xunit.TraitAttribute("Description", "Filter games by era alias")]
+        public async global::System.Threading.Tasks.Task FilterGamesByEraAlias()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "6";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Filter games by era alias", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 48
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 49
+    await testRunner.GivenAsync("the catalogue is initialized with default seed data", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 50
+    await testRunner.WhenAsync("I filter games by era \"16-bit\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 51
+    await testRunner.ThenAsync("the response status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 52
+    await testRunner.AndAsync("all returned games should belong to the 4th-gen era", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 53
+    await testRunner.AndAsync("the results should include a game with title \"The Legend of Zelda: A Link to the " +
+                        "Past\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Xunit.SkippableFactAttribute(DisplayName="Search games with non-matching term returns empty list")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Catalogue Browsing and Filtering")]
+        [global::Xunit.TraitAttribute("Description", "Search games with non-matching term returns empty list")]
+        public async global::System.Threading.Tasks.Task SearchGamesWithNon_MatchingTermReturnsEmptyList()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "7";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Search games with non-matching term returns empty list", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 55
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 56
+    await testRunner.GivenAsync("the catalogue is initialized with default seed data", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 57
+    await testRunner.WhenAsync("I search games by keyword \"NonExistentGameXYZ999\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 58
+    await testRunner.ThenAsync("the response status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 59
     await testRunner.AndAsync("exactly 0 games should be returned", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }

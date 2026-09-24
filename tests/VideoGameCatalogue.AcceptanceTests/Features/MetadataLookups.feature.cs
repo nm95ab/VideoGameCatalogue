@@ -173,6 +173,10 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line 11
     await testRunner.AndAsync("the metadata should contain ratings including \"Everyone\", \"Teen\", \"Mature 17+\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
+#line 12
+    await testRunner.AndAsync("the metadata should contain eras including \"16-Bit Golden Age\", \"3D Revolution\", " +
+                        "\"Modern Era\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }

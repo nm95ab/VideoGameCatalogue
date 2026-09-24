@@ -2,6 +2,7 @@ using FluentAssertions;
 using Reqnroll;
 using VideoGameCatalogue.AcceptanceTests.Drivers;
 using VideoGameCatalogue.Application.Games.DTOs;
+using VideoGameCatalogue.Domain.Games.ValueObjects;
 
 namespace VideoGameCatalogue.AcceptanceTests.StepDefinitions;
 
@@ -43,6 +44,13 @@ public class GameCatalogueStepDefinitions(VideoGameApiDriver driver)
     {
         await driver.GetAllGamesAsync(genre: genre);
     }
+
+    [When(@"I filter games by era ""(.*)""")]
+    public async Task WhenIFilterGamesByEra(string era)
+    {
+        await driver.GetAllGamesAsync(era: era);
+    }
+
 
     [When(@"I search games with keyword ""(.*)"", platform ""(.*)"", and genre ""(.*)""")]
     public async Task WhenISearchGamesWithCombinedCriteria(string search, string platform, string genre)
@@ -106,6 +114,23 @@ public class GameCatalogueStepDefinitions(VideoGameApiDriver driver)
         games.Should().NotBeEmpty();
         games.Should().AllSatisfy(g => g.Genre.Should().Be(genre));
     }
+
+    [Then(@"all returned games should belong to the (.*) era")]
+    public async Task ThenAllReturnedGamesShouldBelongToTheEra(string eraKey)
+    {
+        var games = await driver.ReadGamesListAsync();
+        games.Should().NotBeEmpty();
+        var era = GamingEra.FromKey(eraKey);
+        era.Should().NotBeNull();
+        var maxYear = era!.Value.EndYear ?? DateTime.UtcNow.Year;
+        games.Should().AllSatisfy(g =>
+        {
+            g.ReleaseYear.Should().BeInRange(era.Value.StartYear, maxYear);
+            g.Era.Should().NotBeNull();
+            g.Era!.Key.Should().Be(era.Value.Key);
+        });
+    }
+
 
     [Then(@"exactly (.*) game(?:s)? should be returned")]
     public async Task ThenExactlyGamesShouldBeReturned(int expectedCount)
