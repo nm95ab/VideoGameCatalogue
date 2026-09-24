@@ -378,4 +378,31 @@ public class VideoGameServiceTests
         result.IsSuccess.Should().BeTrue();
         await mockStorage.Received(1).DeleteImageAsync("zelda-to-delete.webp", Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task GetGameByIdAsync_WhenGameHasImageAndStorageConfigured_ShouldPopulateResolvedImageUrl()
+    {
+        // Arrange
+        var mockStorage = Substitute.For<IImageStoragePort>();
+        mockStorage.GetImageUrl("zelda.webp").Returns("https://cdn.videogamecatalogue.com/thumbnails/zelda.webp");
+        var serviceWithStorage = new VideoGameService(_repository, _lookupRepository, imageStorage: mockStorage);
+
+        var existingGame = VideoGame.Create(
+            GameTitle.Create("Zelda").Value,
+            Platform.Create("Nintendo Switch").Value,
+            Genre.Create("Action-Adventure").Value,
+            ReleaseYear.Create(2017).Value,
+            Rating.Create("Everyone 10+").Value,
+            "Desc",
+            imageId: "zelda.webp").Value;
+
+        _repository.GetByIdAsync(existingGame.Id, Arg.Any<CancellationToken>()).Returns(existingGame);
+
+        // Act
+        var result = await serviceWithStorage.GetGameByIdAsync(existingGame.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.ImageUrl.Should().Be("https://cdn.videogamecatalogue.com/thumbnails/zelda.webp");
+    }
 }

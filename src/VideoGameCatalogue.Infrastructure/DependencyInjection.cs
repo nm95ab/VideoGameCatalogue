@@ -54,12 +54,14 @@ public static class DependencyInjection
         {
             var azureConnectionString = configuration["ImageStorage:AzureBlob:ConnectionString"] ?? string.Empty;
             var containerName = configuration["ImageStorage:AzureBlob:ContainerName"] ?? "game-thumbnails";
-            services.AddScoped<IImageStoragePort>(_ => new AzureBlobStorageImageStorageAdapter(azureConnectionString, containerName));
+            var baseUrl = configuration["ImageStorage:AzureBlob:BaseUrl"] ?? configuration["ImageStorage:BaseUrl"];
+            services.AddScoped<IImageStoragePort>(_ => new AzureBlobStorageImageStorageAdapter(azureConnectionString, containerName, baseUrl));
         }
         else
         {
             var localPath = configuration["ImageStorage:LocalStoragePath"];
-            services.AddScoped<IImageStoragePort>(_ => new LocalStorageImageStorageAdapter(localPath));
+            var localBaseUrl = configuration["ImageStorage:LocalBaseUrl"] ?? configuration["ImageStorage:BaseUrl"];
+            services.AddScoped<IImageStoragePort>(_ => new LocalStorageImageStorageAdapter(localPath, localBaseUrl));
         }
     }
 }

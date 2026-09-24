@@ -31,7 +31,7 @@ public class VideoGameService(
         CancellationToken cancellationToken = default)
     {
         var games = await repository.GetAllAsync(searchTerm, platform, genre, cancellationToken);
-        return games.Select(GameDto.FromDomain).ToList();
+        return games.Select(g => GameDto.FromDomain(g, imageStorage)).ToList();
     }
 
     public async Task<Result<GameDto>> GetGameByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -43,7 +43,7 @@ public class VideoGameService(
         if (game is null)
             return Result<GameDto>.Failure(GameErrors.NotFound);
 
-        return Result<GameDto>.Success(GameDto.FromDomain(game));
+        return Result<GameDto>.Success(GameDto.FromDomain(game, imageStorage));
     }
 
     public async Task<Result<GameDto>> CreateGameAsync(CreateGameRequest request, CancellationToken cancellationToken = default)
@@ -62,7 +62,7 @@ public class VideoGameService(
         var game = gameResult.Value;
         await repository.AddAsync(game, cancellationToken);
 
-        return Result<GameDto>.Success(GameDto.FromDomain(game));
+        return Result<GameDto>.Success(GameDto.FromDomain(game, imageStorage));
     }
 
     public async Task<Result<GameDto>> UpdateGameAsync(Guid id, UpdateGameRequest request, CancellationToken cancellationToken = default)
@@ -93,7 +93,7 @@ public class VideoGameService(
             await imageStorage.DeleteImageAsync(oldImageId, cancellationToken);
         }
 
-        return Result<GameDto>.Success(GameDto.FromDomain(game));
+        return Result<GameDto>.Success(GameDto.FromDomain(game, imageStorage));
     }
 
     public async Task<Result> DeleteGameAsync(Guid id, CancellationToken cancellationToken = default)

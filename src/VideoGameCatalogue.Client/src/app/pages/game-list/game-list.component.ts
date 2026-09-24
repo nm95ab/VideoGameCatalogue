@@ -152,8 +152,8 @@ export class GameListComponent implements OnInit {
     this.router.navigate(['/games', id, 'edit']);
   }
 
-  getImageUrl(imageId: string): string {
-    return this.gameService.getImageUrl(imageId);
+  getImageUrl(imageId: string, directUrl?: string | null): string {
+    return this.gameService.getImageUrl(imageId, directUrl);
   }
 
   getInitials(title: string): string {

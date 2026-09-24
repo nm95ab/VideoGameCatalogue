@@ -30,7 +30,7 @@ describe('GameListComponent', () => {
     mockGameService = {
       getGames: vi.fn().mockReturnValue(of(sampleGames)),
       getMetadata: vi.fn().mockReturnValue(of({ platforms: ['SNES'], genres: ['Platformer'], ratings: ['Everyone'] })),
-      getImageUrl: vi.fn((id: string) => `http://localhost:5111/api/images/${id}`)
+      getImageUrl: vi.fn((id: string, directUrl?: string | null) => directUrl || `http://localhost:5111/api/images/${id}`)
     };
 
     mockRouter = {
@@ -214,10 +214,10 @@ describe('GameListComponent', () => {
       expect(component.getInitials('')).toBe('??');
     });
 
-    it('should delegate getImageUrl to gameService', () => {
-      const url = component.getImageUrl('test-123.webp');
-      expect(url).toBe('http://localhost:5111/api/images/test-123.webp');
-      expect(mockGameService.getImageUrl).toHaveBeenCalledWith('test-123.webp');
+    it('should delegate getImageUrl to gameService with directUrl', () => {
+      const url = component.getImageUrl('test-123.webp', 'https://cdn.example.com/test-123.webp');
+      expect(url).toBe('https://cdn.example.com/test-123.webp');
+      expect(mockGameService.getImageUrl).toHaveBeenCalledWith('test-123.webp', 'https://cdn.example.com/test-123.webp');
     });
 
     it('should handle onImageError by replacing img with initials placeholder', () => {

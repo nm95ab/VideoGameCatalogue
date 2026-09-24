@@ -84,3 +84,7 @@ desktop.ini
 # GitNexus
 .gitnexus/
 
+# Local Uploads
+uploads/
+**/uploads/
+

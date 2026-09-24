@@ -30,6 +30,22 @@ app.UseExceptionHandler();
 // Configure the HTTP request pipeline
 app.UseCors(angularCorsPolicy);
 
+// High-performance static file serving for local image storage
+var uploadsDir = Path.Combine(app.Environment.ContentRootPath, "uploads", "images");
+if (!Directory.Exists(uploadsDir))
+{
+    Directory.CreateDirectory(uploadsDir);
+}
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsDir),
+    RequestPath = "/api/images",
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.CacheControl = "public, max-age=86400";
+    }
+});
+
 // Initialize & Seed Database (Code First)
 using (var scope = app.Services.CreateScope())
 {

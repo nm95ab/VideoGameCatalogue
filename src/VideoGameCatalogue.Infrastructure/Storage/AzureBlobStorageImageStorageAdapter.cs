@@ -11,15 +11,22 @@ namespace VideoGameCatalogue.Infrastructure.Storage;
 public class AzureBlobStorageImageStorageAdapter : IImageStoragePort
 {
     private readonly BlobContainerClient _containerClient;
+    private readonly string? _baseUrl;
 
-    public AzureBlobStorageImageStorageAdapter(BlobServiceClient blobServiceClient, string containerName = "game-thumbnails")
+    public AzureBlobStorageImageStorageAdapter(
+        BlobServiceClient blobServiceClient,
+        string containerName = "game-thumbnails",
+        string? baseUrl = null)
     {
         _containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-        _containerClient.CreateIfNotExists(PublicAccessType.None);
+        _baseUrl = baseUrl;
     }
 
-    public AzureBlobStorageImageStorageAdapter(string connectionString, string containerName = "game-thumbnails")
-        : this(new BlobServiceClient(connectionString), containerName)
+    public AzureBlobStorageImageStorageAdapter(
+        string connectionString,
+        string containerName = "game-thumbnails",
+        string? baseUrl = null)
+        : this(new BlobServiceClient(connectionString), containerName, baseUrl)
     {
     }
 
@@ -29,6 +36,8 @@ public class AzureBlobStorageImageStorageAdapter : IImageStoragePort
         string extension,
         CancellationToken cancellationToken = default)
     {
+        await _containerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken).ConfigureAwait(false);
+
         var cleanExtension = extension.StartsWith('.') ? extension : "." + extension;
         var imageId = $"{Guid.NewGuid():N}{cleanExtension}";
         var blobClient = _containerClient.GetBlobClient(imageId);
@@ -65,5 +74,19 @@ public class AzureBlobStorageImageStorageAdapter : IImageStoragePort
         var blobClient = _containerClient.GetBlobClient(imageId);
         var response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
         return response.Value;
+    }
+
+    public string GetImageUrl(string imageId)
+    {
+        if (string.IsNullOrWhiteSpace(imageId))
+            return string.Empty;
+
+        var sanitized = Path.GetFileName(imageId);
+        if (!string.IsNullOrWhiteSpace(_baseUrl))
+        {
+            return $"{_baseUrl.TrimEnd('/')}/{sanitized}";
+        }
+
+        return $"{_containerClient.Uri.ToString().TrimEnd('/')}/{sanitized}";
     }
 }

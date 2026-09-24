@@ -62,7 +62,17 @@ export class GameService {
     return this.http.delete<void>(`${this.imagesUrl}/${imageId}`);
   }
 
-  getImageUrl(imageId: string): string {
+  getImageUrl(imageId: string, directUrl?: string | null): string {
+    if (directUrl?.trim()) {
+      const trimmed = directUrl.trim();
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
+      }
+      if (trimmed.startsWith('/')) {
+        const origin = this.baseUrl.replace(/\/api$/, '');
+        return `${origin}${trimmed}`;
+      }
+    }
     return `${this.imagesUrl}/${imageId}`;
   }
 }

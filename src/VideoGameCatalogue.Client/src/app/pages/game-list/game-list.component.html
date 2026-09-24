@@ -120,7 +120,7 @@
                 <div class="d-flex align-items-center gap-3">
                   @if (game.imageId) {
                     <img
-                      [src]="getImageUrl(game.imageId)"
+                      [src]="getImageUrl(game.imageId, game.imageUrl)"
                       [alt]="game.title"
                       class="rounded object-fit-cover shadow-sm border flex-shrink-0"
                       style="width: 44px; height: 44px;"

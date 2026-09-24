@@ -156,8 +156,19 @@ describe('GameService', () => {
     req.flush(null);
   });
 
-  it('should return image URL', () => {
+  it('should return image URL with fallback to api endpoint', () => {
     const url = service.getImageUrl('img-123.webp');
+    expect(url).toBe('http://localhost:5111/api/images/img-123.webp');
+  });
+
+  it('should return direct CDN URL when absolute URL is provided', () => {
+    const cdnUrl = 'https://cdn.videogamecatalogue.com/thumbnails/img-123.webp';
+    const url = service.getImageUrl('img-123.webp', cdnUrl);
+    expect(url).toBe(cdnUrl);
+  });
+
+  it('should return combined URL when relative URL is provided', () => {
+    const url = service.getImageUrl('img-123.webp', '/api/images/img-123.webp');
     expect(url).toBe('http://localhost:5111/api/images/img-123.webp');
   });
 });

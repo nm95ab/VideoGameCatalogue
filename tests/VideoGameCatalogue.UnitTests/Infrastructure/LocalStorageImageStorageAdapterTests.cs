@@ -96,4 +96,41 @@ public sealed class LocalStorageImageStorageAdapterTests : IDisposable
         // Assert
         deleted.Should().BeFalse();
     }
+
+    [Fact]
+    public void GetImageUrl_DefaultConfiguration_ReturnsRelativeApiPath()
+    {
+        // Act
+        var url = _adapter.GetImageUrl("thumb-123.webp");
+
+        // Assert
+        url.Should().Be("/api/images/thumb-123.webp");
+    }
+
+    [Fact]
+    public void GetImageUrl_WithCustomBaseUrl_ReturnsFullUrl()
+    {
+        // Arrange
+        var adapterWithBaseUrl = new LocalStorageImageStorageAdapter(_tempDirectory, "http://localhost:5111/api/images");
+
+        // Act
+        var url = adapterWithBaseUrl.GetImageUrl("thumb-123.webp");
+
+        // Assert
+        url.Should().Be("http://localhost:5111/api/images/thumb-123.webp");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("../malicious.webp")]
+    [InlineData("sub/malicious.webp")]
+    public void GetImageUrl_WhenUnsafeOrEmpty_ReturnsEmptyString(string unsafeId)
+    {
+        // Act
+        var url = _adapter.GetImageUrl(unsafeId);
+
+        // Assert
+        url.Should().BeEmpty();
+    }
 }

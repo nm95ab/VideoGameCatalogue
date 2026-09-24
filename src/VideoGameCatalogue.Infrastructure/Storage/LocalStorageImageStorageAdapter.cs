@@ -8,12 +8,15 @@ namespace VideoGameCatalogue.Infrastructure.Storage;
 public class LocalStorageImageStorageAdapter : IImageStoragePort
 {
     private readonly string _storageDirectory;
+    private readonly string? _baseUrl;
 
-    public LocalStorageImageStorageAdapter(string? storageDirectory = null)
+    public LocalStorageImageStorageAdapter(string? storageDirectory = null, string? baseUrl = null)
     {
         _storageDirectory = string.IsNullOrWhiteSpace(storageDirectory)
             ? Path.Combine(Directory.GetCurrentDirectory(), "uploads", "images")
             : storageDirectory;
+
+        _baseUrl = baseUrl;
 
         if (!Directory.Exists(_storageDirectory))
         {
@@ -65,6 +68,20 @@ public class LocalStorageImageStorageAdapter : IImageStoragePort
 
         File.Delete(filePath);
         return Task.FromResult(true);
+    }
+
+    public string GetImageUrl(string imageId)
+    {
+        if (IsUnsafePath(imageId))
+            return string.Empty;
+
+        var sanitized = Path.GetFileName(imageId);
+        if (!string.IsNullOrWhiteSpace(_baseUrl))
+        {
+            return $"{_baseUrl.TrimEnd('/')}/{sanitized}";
+        }
+
+        return $"/api/images/{sanitized}";
     }
 
     private string GetSafeFilePath(string imageId)

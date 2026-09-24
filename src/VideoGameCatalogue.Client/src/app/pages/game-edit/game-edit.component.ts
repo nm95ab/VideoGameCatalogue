@@ -132,7 +132,7 @@ export class GameEditComponent implements OnInit {
         this.selectedFile = null;
         this.imageError.set(null);
         if (game.imageId) {
-          this.imagePreviewUrl.set(this.gameService.getImageUrl(game.imageId));
+          this.imagePreviewUrl.set(this.gameService.getImageUrl(game.imageId, game.imageUrl));
         } else {
           this.imagePreviewUrl.set(null);
         }

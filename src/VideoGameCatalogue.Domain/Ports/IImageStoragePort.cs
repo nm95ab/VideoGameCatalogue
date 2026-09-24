@@ -25,4 +25,9 @@ public interface IImageStoragePort
     /// Deletes an image from storage by its identifier.
     /// </summary>
     Task<bool> DeleteImageAsync(string imageId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resolves the public, CDN, or relative URL for accessing the image by its identifier.
+    /// </summary>
+    string GetImageUrl(string imageId);
 }
