@@ -1,5 +1,5 @@
 # Video Game Catalogue - Developer Quickstart (Windows PowerShell)
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 function Update-EnvironmentPath {
     $machinePath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
@@ -11,7 +11,8 @@ function Update-EnvironmentPath {
         "$env:ProgramFiles\nodejs",
         "$env:LOCALAPPDATA\Microsoft\dotnet",
         "$env:ProgramFiles\Docker\Docker\resources\bin",
-        "$env:ProgramData\DockerDesktop\version-bin"
+        "$env:ProgramData\DockerDesktop\version-bin",
+        "$env:ProgramFiles\Docker\Docker"
     )
     foreach ($loc in $standardLocations) {
         if ((Test-Path $loc) -and ($env:Path -notlike "*$loc*")) {
@@ -128,6 +129,24 @@ function Install-Docker {
     Update-EnvironmentPath
 }
 
+function Test-DockerDaemon {
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    try {
+        if (Get-Command cmd.exe -ErrorAction SilentlyContinue) {
+            $null = & cmd.exe /c "docker info >nul 2>&1"
+            return ($LASTEXITCODE -eq 0)
+        } else {
+            $null = & docker info 2>$null
+            return ($LASTEXITCODE -eq 0)
+        }
+    } catch {
+        return $false
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+}
+
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host "   Video Game Catalogue - Developer Quickstart      " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
@@ -140,7 +159,7 @@ Update-EnvironmentPath
 
 $hasDotNet10 = $false
 if (Get-Command dotnet -ErrorAction SilentlyContinue) {
-    $sdks = & dotnet --list-sdks 2>&1
+    $sdks = & dotnet --list-sdks 2>$null
     if ($sdks -match "10\.") {
         $hasDotNet10 = $true
     }
@@ -212,19 +231,30 @@ if ($alreadyListening) {
         exit 1
     }
 
-    docker info 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Test-DockerDaemon)) {
         Write-Host "  [*] Docker daemon is not running. Starting Docker Desktop..." -ForegroundColor Cyan
-        $dockerApp = "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
-        if (Test-Path $dockerApp) {
-            Start-Process -FilePath $dockerApp
+        $dockerPaths = @(
+            "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe",
+            "$env:LOCALAPPDATA\Programs\Docker\Docker\Docker Desktop.exe"
+        )
+        $started = $false
+        foreach ($app in $dockerPaths) {
+            if (Test-Path $app) {
+                Start-Process -FilePath $app
+                $started = $true
+                break
+            }
+        }
+        if (-not $started) {
+            try {
+                Start-Process "Docker Desktop" -ErrorAction SilentlyContinue
+            } catch { }
         }
 
         Write-Host -NoNewline "  [*] Waiting for Docker engine to start..."
         $dockerReady = $false
-        for ($d = 1; $d -le 45; $d++) {
-            docker info 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) {
+        for ($d = 1; $d -le 60; $d++) {
+            if (Test-DockerDaemon) {
                 $dockerReady = $true
                 Write-Host " Ready!" -ForegroundColor Green
                 break
@@ -235,7 +265,8 @@ if ($alreadyListening) {
 
         if (-not $dockerReady) {
             Write-Host ""
-            Write-Host "[ERROR] Docker engine did not respond in time. Please ensure Docker Desktop is started." -ForegroundColor Red
+            Write-Host "[ERROR] Docker engine did not respond in time." -ForegroundColor Red
+            Write-Host "   Please open Docker Desktop from the Start Menu, complete any initial setup, and re-run .\run.ps1"
             exit 1
         }
     } else {
@@ -244,15 +275,15 @@ if ($alreadyListening) {
 
     Write-Host "  [*] Ensuring SQL Server container is up..."
     try {
-        $containers = docker ps -a --format "{{.Names}}" 2>&1
+        $containers = & docker ps -a --format "{{.Names}}" 2>$null
         if ($containers -match "videogamecatalogue-sqlserver") {
-            docker start videogamecatalogue-sqlserver 2>&1 | Out-Null
+            & docker start videogamecatalogue-sqlserver 2>$null | Out-Null
         } else {
-            docker compose up -d sqlserver 2>&1 | Out-Null
+            & docker compose up -d sqlserver 2>$null | Out-Null
         }
     } catch {
-        Write-Host "[ERROR] Failed to start SQL Server container: $_" -ForegroundColor Red
-        exit 1
+        Write-Host "  [WARN] Issue starting container via docker CLI: $_" -ForegroundColor Yellow
+        & docker compose up -d sqlserver
     }
 
     Write-Host -NoNewline "  [*] Waiting for SQL Server on port 1433..."
