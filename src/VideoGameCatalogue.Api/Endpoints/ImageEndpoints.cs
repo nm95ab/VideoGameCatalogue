@@ -18,7 +18,8 @@ public static class ImageEndpoints
             .WithTags("Images");
 
         group.MapPost("/", UploadImage)
-            .DisableAntiforgery();
+            .DisableAntiforgery()
+            .RequireRateLimiting("UploadsPolicy");
 
         group.MapGet("/{imageId}", GetImage);
         group.MapDelete("/{imageId}", DeleteImage);
@@ -63,7 +64,7 @@ public static class ImageEndpoints
             return ToProblemResult(result.Error);
         }
 
-        httpContext.Response.Headers.CacheControl = "public, max-age=86400";
+        httpContext.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
         return TypedResults.Stream(result.Value.Stream, result.Value.ContentType);
     }
 

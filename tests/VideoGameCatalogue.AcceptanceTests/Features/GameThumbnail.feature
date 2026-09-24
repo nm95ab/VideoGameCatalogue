@@ -19,6 +19,11 @@ Scenario: Reject invalid image upload with non-image data
     Then the response status code should be 400
     And the error code should be "Image.InvalidFormat"
 
+Scenario: Reject image exceeding maximum allowable dimensions
+    When I upload an image "bomb.png" with dimensions 4097 by 50
+    Then the response status code should be 400
+    And the error code should be "Image.TooLargeDimensions"
+
 Scenario: Create game with uploaded thumbnail image
     Given an uploaded image "gameart.png"
     When I create a game with the uploaded image ID

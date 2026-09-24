@@ -60,4 +60,21 @@ public class ImageSharpThumbnailProcessorTests
         processed.Height.Should().BeLessThanOrEqualTo(300);
         processed.Stream.Length.Should().BeGreaterThan(0);
     }
+
+    [Fact]
+    public async Task ProcessThumbnailAsync_WhenImageExceedsMaxDimensions_ShouldReturnTooLargeDimensionsFailure()
+    {
+        // Arrange: create an image with width 4097 and height 10 (exceeds 4096px limit)
+        using var largeImage = new Image<Rgba32>(4097, 10);
+        using var inputStream = new MemoryStream();
+        await largeImage.SaveAsPngAsync(inputStream);
+        inputStream.Position = 0;
+
+        // Act
+        var result = await _processor.ProcessThumbnailAsync(inputStream, "bomb.png");
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Image.TooLargeDimensions");
+    }
 }

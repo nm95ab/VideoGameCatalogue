@@ -107,7 +107,7 @@ namespace VideoGameCatalogue.AcceptanceTests.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/GameThumbnail.feature.ndjson", 7);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/GameThumbnail.feature.ndjson", 8);
         }
         
         async global::System.Threading.Tasks.Task global::Xunit.IAsyncLifetime.InitializeAsync()
@@ -240,15 +240,15 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             await this.ScenarioCleanupAsync();
         }
         
-        [global::Xunit.SkippableFactAttribute(DisplayName="Create game with uploaded thumbnail image")]
+        [global::Xunit.SkippableFactAttribute(DisplayName="Reject image exceeding maximum allowable dimensions")]
         [global::Xunit.TraitAttribute("FeatureTitle", "Game Thumbnail Management")]
-        [global::Xunit.TraitAttribute("Description", "Create game with uploaded thumbnail image")]
-        public async global::System.Threading.Tasks.Task CreateGameWithUploadedThumbnailImage()
+        [global::Xunit.TraitAttribute("Description", "Reject image exceeding maximum allowable dimensions")]
+        public async global::System.Threading.Tasks.Task RejectImageExceedingMaximumAllowableDimensions()
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             string pickleIndex = "3";
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Create game with uploaded thumbnail image", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Reject image exceeding maximum allowable dimensions", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
 #line 22
@@ -262,18 +262,52 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             {
                 await this.ScenarioStartAsync();
 #line 23
-    await testRunner.GivenAsync("an uploaded image \"gameart.png\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.WhenAsync("I upload an image \"bomb.png\" with dimensions 4097 by 50", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 24
-    await testRunner.WhenAsync("I create a game with the uploaded image ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.ThenAsync("the response status code should be 400", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 25
+    await testRunner.AndAsync("the error code should be \"Image.TooLargeDimensions\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Xunit.SkippableFactAttribute(DisplayName="Create game with uploaded thumbnail image")]
+        [global::Xunit.TraitAttribute("FeatureTitle", "Game Thumbnail Management")]
+        [global::Xunit.TraitAttribute("Description", "Create game with uploaded thumbnail image")]
+        public async global::System.Threading.Tasks.Task CreateGameWithUploadedThumbnailImage()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "4";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Create game with uploaded thumbnail image", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 27
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 28
+    await testRunner.GivenAsync("an uploaded image \"gameart.png\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 29
+    await testRunner.WhenAsync("I create a game with the uploaded image ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 30
     await testRunner.ThenAsync("the response status code should be 201", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 26
+#line 31
     await testRunner.AndAsync("the created game should reference the image ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 27
+#line 32
     await testRunner.AndAsync("the created game should have an image URL", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -287,11 +321,11 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
         {
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
-            string pickleIndex = "4";
+            string pickleIndex = "5";
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Delete uploaded image from storage", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 29
+#line 34
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -301,16 +335,16 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 30
+#line 35
     await testRunner.GivenAsync("an uploaded image \"temporary.png\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 31
+#line 36
     await testRunner.WhenAsync("I delete the image by its ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 32
+#line 37
     await testRunner.ThenAsync("the response status code should be 204", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 33
+#line 38
     await testRunner.AndAsync("requesting the deleted image should return 404", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }

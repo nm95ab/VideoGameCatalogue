@@ -11,6 +11,8 @@ namespace VideoGameCatalogue.Infrastructure.Images;
 /// </summary>
 public class ImageSharpThumbnailProcessor : IImageThumbnailProcessor
 {
+    private const int MaxAllowedDimension = 4096;
+
     public async Task<Result<ProcessedImageResult>> ProcessThumbnailAsync(
         Stream inputStream,
         string originalFileName,
@@ -20,11 +22,20 @@ public class ImageSharpThumbnailProcessor : IImageThumbnailProcessor
         if (inputStream is null || inputStream.Length == 0)
             return Result<ProcessedImageResult>.Failure(Error.Validation("Image.Empty", "The image file stream is empty."));
 
-        if (inputStream.CanSeek)
-            inputStream.Position = 0;
+        RewindIfSeekable(inputStream);
 
         try
         {
+            // Inspect header metadata only (O(1) memory) to prevent decompression bombs / pixel flood DoS
+            var imageInfo = await Image.IdentifyAsync(inputStream, cancellationToken);
+            var validationError = ValidateImageDimensions(imageInfo);
+            if (validationError is not null)
+            {
+                return Result<ProcessedImageResult>.Failure(validationError.Value);
+            }
+
+            RewindIfSeekable(inputStream);
+
             using var image = await Image.LoadAsync(inputStream, cancellationToken);
 
             var resizeOptions = new ResizeOptions
@@ -64,6 +75,31 @@ public class ImageSharpThumbnailProcessor : IImageThumbnailProcessor
         catch (InvalidImageContentException)
         {
             return Result<ProcessedImageResult>.Failure(Error.Validation("Image.Corrupted", "The uploaded image file is corrupted."));
+        }
+    }
+
+    private static Error? ValidateImageDimensions(ImageInfo? imageInfo)
+    {
+        if (imageInfo is null)
+        {
+            return Error.Validation("Image.InvalidFormat", "Unable to read image metadata.");
+        }
+
+        if (imageInfo.Width > MaxAllowedDimension || imageInfo.Height > MaxAllowedDimension)
+        {
+            return Error.Validation(
+                "Image.TooLargeDimensions",
+                $"Image dimensions ({imageInfo.Width}x{imageInfo.Height}) exceed the maximum allowable limit of {MaxAllowedDimension}x{MaxAllowedDimension} pixels.");
+        }
+
+        return null;
+    }
+
+    private static void RewindIfSeekable(Stream stream)
+    {
+        if (stream.CanSeek)
+        {
+            stream.Position = 0;
         }
     }
 }

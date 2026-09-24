@@ -66,6 +66,15 @@ public class GameThumbnailStepDefinitions(VideoGameApiDriver driver)
         await driver.UploadImageAsync(bytes, fileName, "text/plain");
     }
 
+    [When(@"I upload an image ""(.*)"" with dimensions (\d+) by (\d+)")]
+    public async Task WhenIUploadAnImageWithDimensions(string fileName, int width, int height)
+    {
+        using var img = new Image<Rgba32>(width, height);
+        using var ms = new MemoryStream();
+        await img.SaveAsPngAsync(ms);
+        await driver.UploadImageAsync(ms.ToArray(), fileName, "image/png");
+    }
+
     [When("I create a game with the uploaded image ID")]
     public async Task WhenICreateAGameWithTheUploadedImageId()
     {
