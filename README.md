@@ -44,14 +44,14 @@ Clone the repository and run the automated bootstrap script. It will verify your
 
 ### On macOS / Linux:
 ```bash
-git clone https://github.com/<org>/VideoGameCatalogue.git
+git clone https://github.com/nm95ab/VideoGameCatalogue.git
 cd VideoGameCatalogue
 ./run.sh
 ```
 
 ### On Windows (PowerShell):
 ```powershell
-git clone https://github.com/<org>/VideoGameCatalogue.git
+git clone https://github.com/nm95ab/VideoGameCatalogue.git
 cd VideoGameCatalogue
 .\run.ps1
 ```
