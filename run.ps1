@@ -9,7 +9,9 @@ function Update-EnvironmentPath {
     $standardLocations = @(
         "$env:ProgramFiles\dotnet",
         "$env:ProgramFiles\nodejs",
-        "$env:LOCALAPPDATA\Microsoft\dotnet"
+        "$env:LOCALAPPDATA\Microsoft\dotnet",
+        "$env:ProgramFiles\Docker\Docker\resources\bin",
+        "$env:ProgramData\DockerDesktop\version-bin"
     )
     foreach ($loc in $standardLocations) {
         if ((Test-Path $loc) -and ($env:Path -notlike "*$loc*")) {
@@ -90,6 +92,42 @@ function Install-NodeJs {
     Update-EnvironmentPath
 }
 
+function Install-Docker {
+    Write-Host "  [*] Attempting automatic installation of Docker Desktop..." -ForegroundColor Yellow
+    $success = $false
+
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        Write-Host "  [*] Running Windows Package Manager (winget)..."
+        try {
+            & winget install --id Docker.DockerDesktop -e --silent --accept-package-agreements --accept-source-agreements
+            if ($LASTEXITCODE -eq 0) {
+                $success = $true
+            }
+        } catch { }
+    }
+
+    if (-not $success) {
+        Write-Host "  [*] Downloading official Docker Desktop installer..."
+        $installerUrl = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
+        $installerPath = Join-Path $env:TEMP "DockerDesktopInstaller.exe"
+        try {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
+            Write-Host "  [*] Launching Docker Desktop installer (silent)..."
+            $proc = Start-Process -FilePath $installerPath -ArgumentList "install --quiet --accept-license" -PassThru -Wait
+            if ($proc.ExitCode -eq 0) {
+                $success = $true
+            }
+        } catch {
+            Write-Host "  [WARN] Download or execution failed: $_" -ForegroundColor Yellow
+        } finally {
+            if (Test-Path $installerPath) { Remove-Item $installerPath -Force -ErrorAction SilentlyContinue }
+        }
+    }
+
+    Update-EnvironmentPath
+}
+
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host "   Video Game Catalogue - Developer Quickstart      " -ForegroundColor Cyan
 Write-Host "====================================================" -ForegroundColor Cyan
@@ -98,7 +136,6 @@ Write-Host ""
 # 1. Preflight Toolchain Checks
 Write-Host "[1/5] Checking Toolchain Prerequisites..." -ForegroundColor White
 
-# Ensure current session sees system path additions
 Update-EnvironmentPath
 
 $hasDotNet10 = $false
@@ -152,7 +189,6 @@ Write-Host "  [OK] npm found: $npmVer" -ForegroundColor Green
 # 2. Database Environment Setup
 Write-Host ""
 Write-Host "[2/5] Checking Database Environment..." -ForegroundColor White
-$useInMemory = $false
 
 $alreadyListening = $false
 try {
@@ -165,44 +201,77 @@ try {
 if ($alreadyListening) {
     Write-Host "  [OK] SQL Server is already listening on port 1433." -ForegroundColor Green
 } else {
-    $dockerAvailable = $false
-    if (Get-Command docker -ErrorAction SilentlyContinue) {
-        docker info 2>&1 | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            $dockerAvailable = $true
-        }
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        Write-Host "  [WARN] Docker CLI not found." -ForegroundColor Yellow
+        Install-Docker
     }
 
-    if ($dockerAvailable) {
-        Write-Host "  [OK] Docker is running. Ensuring SQL Server container is up..." -ForegroundColor Green
-        try {
-            $containers = docker ps -a --format "{{.Names}}" 2>&1
-            if ($containers -match "videogamecatalogue-sqlserver") {
-                docker start videogamecatalogue-sqlserver 2>&1 | Out-Null
-            } else {
-                docker compose up -d sqlserver 2>&1 | Out-Null
-            }
-        } catch { }
-        
-        Write-Host -NoNewline "  Waiting for SQL Server on port 1433..."
-        for ($i = 1; $i -le 15; $i++) {
-            $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
-            if ($tcp.TcpTestSucceeded) {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        Write-Host "[ERROR] Docker not found and could not be installed automatically." -ForegroundColor Red
+        Write-Host "   Please install Docker Desktop: https://www.docker.com/products/docker-desktop/"
+        exit 1
+    }
+
+    docker info 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  [*] Docker daemon is not running. Starting Docker Desktop..." -ForegroundColor Cyan
+        $dockerApp = "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+        if (Test-Path $dockerApp) {
+            Start-Process -FilePath $dockerApp
+        }
+
+        Write-Host -NoNewline "  [*] Waiting for Docker engine to start..."
+        $dockerReady = $false
+        for ($d = 1; $d -le 45; $d++) {
+            docker info 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                $dockerReady = $true
                 Write-Host " Ready!" -ForegroundColor Green
                 break
             }
-            Start-Sleep -Seconds 1
+            Start-Sleep -Seconds 2
             Write-Host -NoNewline "."
-            if ($i -eq 15) {
-                Write-Host ""
-                Write-Host "  [WARN] SQL Server timed out. Falling back to In-Memory database." -ForegroundColor Yellow
-                $useInMemory = $true
-            }
+        }
+
+        if (-not $dockerReady) {
+            Write-Host ""
+            Write-Host "[ERROR] Docker engine did not respond in time. Please ensure Docker Desktop is started." -ForegroundColor Red
+            exit 1
         }
     } else {
-        Write-Host "  [WARN] Docker is not running or not installed." -ForegroundColor Yellow
-        Write-Host "    Falling back to EF Core In-Memory database for zero-dependency local run!" -ForegroundColor Yellow
-        $useInMemory = $true
+        Write-Host "  [OK] Docker daemon is running." -ForegroundColor Green
+    }
+
+    Write-Host "  [*] Ensuring SQL Server container is up..."
+    try {
+        $containers = docker ps -a --format "{{.Names}}" 2>&1
+        if ($containers -match "videogamecatalogue-sqlserver") {
+            docker start videogamecatalogue-sqlserver 2>&1 | Out-Null
+        } else {
+            docker compose up -d sqlserver 2>&1 | Out-Null
+        }
+    } catch {
+        Write-Host "[ERROR] Failed to start SQL Server container: $_" -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host -NoNewline "  [*] Waiting for SQL Server on port 1433..."
+    $sqlReady = $false
+    for ($i = 1; $i -le 30; $i++) {
+        $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port 1433 -WarningAction SilentlyContinue
+        if ($tcp.TcpTestSucceeded) {
+            $sqlReady = $true
+            Write-Host " Ready!" -ForegroundColor Green
+            break
+        }
+        Start-Sleep -Seconds 1
+        Write-Host -NoNewline "."
+    }
+
+    if (-not $sqlReady) {
+        Write-Host ""
+        Write-Host "[ERROR] SQL Server timed out waiting on port 1433." -ForegroundColor Red
+        exit 1
     }
 }
 
@@ -231,10 +300,6 @@ Write-Host "  [OK] Build succeeded with zero warnings." -ForegroundColor Green
 # 5. Launch Backend & Frontend
 Write-Host ""
 Write-Host "[5/5] Launching Services..." -ForegroundColor White
-
-if ($useInMemory) {
-    $env:UseInMemoryDatabase = "true"
-}
 
 $apiProcess = Start-Process dotnet -ArgumentList "run --project src/VideoGameCatalogue.Api --urls http://127.0.0.1:5111" -PassThru
 Push-Location "src/VideoGameCatalogue.Client"
