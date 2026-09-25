@@ -6,31 +6,16 @@ using VideoGameCatalogue.Domain.Games.ValueObjects;
 namespace VideoGameCatalogue.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// Entity Framework Core relational mapping configuration for the <see cref="VideoGame"/> Aggregate Root.
-/// <para>
-/// Architectural Design Note:
-/// Domain Value Objects (Title, Platform, Genre, ReleaseYear, Rating) are mapped as EF Core Complex Types
-/// using <c>ComplexProperty</c> rather than legacy <c>HasConversion</c> Value Converters.
-/// This registers the inner <c>.Value</c> as a first-class mapped column in EF Core's relational expression
-/// tree, allowing LINQ queries like <c>g.Title.Value.Contains(search)</c> and <c>OrderBy(g => g.Title.Value)</c>.
-/// <para>
-/// Indexing Strategy:
-/// Because EF Core 10 Fluent API does not yet support declaring indexes directly on properties inside
-/// <c>ComplexProperty</c> mappings (scheduled for EF Core 11+), high-performance relational non-clustered indexes
-/// for [Platform], [Genre], [Title], and composite [Platform, Genre, Title] are provisioned programmatically
-/// via <see cref="DatabaseSeeder.MigrateSchemaAsync"/> upon application startup and schema migration.
-/// </para>
-/// </para>
+/// Relational Entity Framework Core mapping configuration for Microsoft SQL Server.
+/// Maps Domain Value Objects as Complex Types (<c>ComplexProperty</c>) with native column mappings.
 /// </summary>
-public class VideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
+public class SqlServerVideoGameConfiguration : IEntityTypeConfiguration<VideoGame>
 {
     public void Configure(EntityTypeBuilder<VideoGame> builder)
     {
         builder.ToTable("VideoGames");
-
         builder.HasKey(x => x.Id);
 
-        // Map GameTitle Value Object as a Complex Type to column [Title]
         builder.ComplexProperty(x => x.Title, b =>
         {
             b.Property(p => p.Value)

@@ -3,9 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using VideoGameCatalogue.Application.Common.Ports;
+using VideoGameCatalogue.Domain.Games;
 using VideoGameCatalogue.Domain.Ports;
 using VideoGameCatalogue.Infrastructure.Images;
 using VideoGameCatalogue.Infrastructure.Persistence;
+using VideoGameCatalogue.Infrastructure.Persistence.Configurations;
 using VideoGameCatalogue.Infrastructure.Persistence.Repositories;
 using VideoGameCatalogue.Infrastructure.Storage;
 
@@ -23,11 +25,14 @@ public static class DependencyInjection
 
         if (shouldUseInMemory)
         {
+            services.AddSingleton<IEntityTypeConfiguration<VideoGame>, InMemoryVideoGameConfiguration>();
             services.AddDbContext<VideoGameCatalogueDbContext>(options =>
                 options.UseInMemoryDatabase("VideoGameCatalogueDb"));
         }
         else
         {
+            services.AddSingleton<IEntityTypeConfiguration<VideoGame>, SqlServerVideoGameConfiguration>();
+
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw new InvalidOperationException(

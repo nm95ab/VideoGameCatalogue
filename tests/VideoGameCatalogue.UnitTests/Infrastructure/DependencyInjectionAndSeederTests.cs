@@ -49,6 +49,11 @@ public sealed class DependencyInjectionAndSeederTests
         var lookupDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ILookupRepository));
         lookupDescriptor.Should().NotBeNull();
         lookupDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
+
+        var configDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEntityTypeConfiguration<VideoGame>));
+        configDescriptor.Should().NotBeNull();
+        configDescriptor!.ImplementationType.Should().Be(typeof(VideoGameCatalogue.Infrastructure.Persistence.Configurations.InMemoryVideoGameConfiguration));
+        configDescriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
     }
 
     [Fact]
@@ -73,6 +78,11 @@ public sealed class DependencyInjectionAndSeederTests
         var lookupDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ILookupRepository));
         lookupDescriptor.Should().NotBeNull();
         lookupDescriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
+
+        var configDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEntityTypeConfiguration<VideoGame>));
+        configDescriptor.Should().NotBeNull();
+        configDescriptor!.ImplementationType.Should().Be(typeof(VideoGameCatalogue.Infrastructure.Persistence.Configurations.SqlServerVideoGameConfiguration));
+        configDescriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
     }
 
     [Fact]
@@ -150,5 +160,43 @@ public sealed class DependencyInjectionAndSeederTests
         dto.Description.Should().Be("Samus on Planet ZDR");
         dto.CreatedAtUtc.Should().Be(game.CreatedAtUtc);
         dto.UpdatedAtUtc.Should().Be(game.UpdatedAtUtc);
+    }
+
+    [Fact]
+    public async Task AddInfrastructure_WithInMemory_CanSeedAndQueryGamesSuccessfully()
+    {
+        var services = new ServiceCollection();
+        var inMemorySettings = new Dictionary<string, string?>
+        {
+            { "UseInMemoryDatabase", "true" }
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings)
+            .Build();
+
+        services.AddInfrastructure(configuration);
+
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<VideoGameCatalogueDbContext>();
+        var repository = scope.ServiceProvider.GetRequiredService<IVideoGameRepository>();
+
+        await DatabaseSeeder.SeedAsync(context);
+
+        var games = await repository.GetAllAsync();
+        games.Should().HaveCount(104);
+
+        var firstGame = await repository.GetByIdAsync(games.First().Id);
+        firstGame.Should().NotBeNull();
+        firstGame!.Title.Value.Should().NotBeNullOrWhiteSpace();
+        firstGame.Genre.Value.Should().NotBeNullOrWhiteSpace();
+        firstGame.Platform.Value.Should().NotBeNullOrWhiteSpace();
+
+        var searchResult = await repository.GetAllAsync(searchTerm: "Zelda");
+        searchResult.Should().NotBeEmpty();
+
+        var pagedResult = await repository.GetPagedAsync(pageSize: 5);
+        pagedResult.TotalCount.Should().Be(104);
+        pagedResult.Items.Should().HaveCount(5);
     }
 }
